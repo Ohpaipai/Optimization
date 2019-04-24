@@ -3,50 +3,93 @@
 #include<string>
 #include<algorithm>
 #include<vector>
-class Linklist;
 
-class ListVariables{
+typedef struct MyStruct
+{
+	std::string name;//變數名 x or y or z...
+	double exponential;//次方
+
+	bool operator ==(MyStruct& p)  //判斷是否一樣
+	{
+		if (this->name == p.name&&p.exponential == this->exponential) return true;
+		else return false;
+	}
+	MyStruct operator =(MyStruct &tem) {//=
+		this->name = tem.name;
+		this->exponential = tem.exponential;
+		return *this;
+	}
+
+}Variance; //放置幾次方(變數項)
+
+
+typedef struct MyStruct2
+{
+	std::string mathName;//可能為sinx cosx 之類的
+	double coefficient;//係數
+
+	bool operator ==( MyStruct2& p)  //判斷是否一樣
+	{
+		if (this->mathName==p.mathName&&this->coefficient==p.coefficient) return true;
+		else return false;
+	}
+	MyStruct2 operator =(MyStruct2 &tem) { //=
+		this->mathName = tem.mathName;
+		this->coefficient = tem.coefficient;
+		return *this;
+	}
+	MyStruct2 operator *(MyStruct2 &tem) { //*
+		MyStruct2 ans;
+		ans.coefficient = this->coefficient*tem.coefficient;
+		ans.mathName = this->mathName + tem.mathName; //是否有更佳方法?
+		return ans;
+	}
+}Coefficient; //放置coef
+
+
+
+class LinkVariance
+{
 public:
-	ListVariables() :name(""), exponential(0),Vnext(NULL){};
-	ListVariables(std::string _name,double _exp) :name(_name), exponential(_exp), Vnext(NULL) {};
 	
-	
-private:
-	std::string name;
-	double exponential;
-	ListVariables *Vnext;
-	friend class Linklist;
+	bool operator ==( LinkVariance _var); //是否變數一樣
+	LinkVariance operator =(LinkVariance &tem);//=
+	~LinkVariance();
+	LinkVariance();
+	LinkVariance(Variance);
+	void insert(Variance);//新增
+	LinkVariance(const LinkVariance &tem);//複製
+	void Delete(Variance);//刪除
+	LinkVariance operator*(LinkVariance tem);
+	std::vector<Variance>variable;  //多個變數項
+	friend std::ostream& operator<<(std::ostream& os, const LinkVariance&);
 };
 
-class ListNode {
 
+
+
+
+
+
+
+
+class LinkEquation
+{
 public:
+	LinkEquation();//初始化
+	~LinkEquation();
+	LinkEquation(const LinkEquation&);//複製
+	LinkEquation(LinkVariance _var, Coefficient _coe);//初始化
+	void insert(LinkVariance _var, Coefficient _coe);//新增資料
+	void Delete(LinkVariance _var, Coefficient _coe);//刪除資料
 
-	ListNode() :coefficient(0), MathName(""),variables(),Lnext(NULL){};
-	ListNode(double _coe) : coefficient(_coe), MathName(""),variables(), Lnext(NULL){};
-	ListNode(std::string _mathname) : coefficient(1), MathName(_mathname), variables(), Lnext(NULL) {};
-	ListNode(double _coe, std::string _mathname) : coefficient(_coe), MathName(_mathname), variables(), Lnext(NULL) {};
-private: 
-	double coefficient;
-	std::string MathName;
-	ListVariables variables;
-	ListNode *Lnext;
-	friend class Linklist;
-};
-
-
-class Linklist {
+	LinkEquation operator*(LinkEquation tem);//*
+	LinkEquation operator+(LinkEquation tem);//+
+	LinkEquation operator-(LinkEquation tem);//-
+	friend std::ostream& operator<<(std::ostream& os, const LinkEquation&);
 private:
-	int size;                
-	ListNode *Lfirst;   
-	ListVariables *Vfirst;
-public:
-	Linklist() :size(0),Lfirst(NULL),Vfirst(NULL){};
-	void PrintList();           
-	void Push_front(std::string _name, double _exp);
-	void Push_front(double _coe);
-	void Push_back(int x);      
-	void Delete(int x);        
-	void Clear();               
-	void Reverse();            
+	std::vector<LinkVariance>Polynomial; //3 
+	std::vector<Coefficient>Polynomial_coef;// x^3
+	//互相對應 vector size兩個必定相同
 };
+
