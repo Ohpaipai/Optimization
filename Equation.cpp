@@ -342,7 +342,10 @@ std::ostream & operator<<(std::ostream & os, const LinkEquation &tem)
 		if(tem.Polynomial_coef[i].mathName!="") os << tem.Polynomial_coef[i].mathName;
 		for (int j = 0; j < tem.Polynomial[i].variable.size(); j++)
 		{
-			os << tem.Polynomial[i].variable[j].name <<"^"<<tem.Polynomial[i].variable[j].exponential;
+			if(tem.Polynomial[i].variable[j].name!="c")
+				os << tem.Polynomial[i].variable[j].name <<"^"<<tem.Polynomial[i].variable[j].exponential;
+			else
+				os << tem.Polynomial[i].variable[j].name ;
 		}
 		if (i + 1 != tem.Polynomial_coef.size()) os << " + ";
 		
