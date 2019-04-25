@@ -9,6 +9,7 @@ int main() {
 	b.coefficient = 4;
 	LinkVariance p(a);
 	q.insert(p, b);
+
 	w = q - q;
 	std::cout << q<<w;
 

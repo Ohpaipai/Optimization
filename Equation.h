@@ -3,6 +3,16 @@
 #include<string>
 #include<algorithm>
 #include<vector>
+#include<math.h>
+#include<ctype.h>
+const double  phi = (1 + std::sqrt(5)) / 2;
+const double  resphi = (2 - phi);
+
+
+
+
+
+
 
 typedef struct MyStruct
 {
@@ -87,6 +97,9 @@ public:
 	LinkEquation operator+(LinkEquation tem);//+
 	LinkEquation operator-(LinkEquation tem);//-
 	friend std::ostream& operator<<(std::ostream& os, const LinkEquation&);
+	double Fxans(double);
+	double GoldenSectionSearch(double lowBound, double middle, double upperBound, double tau);
+	
 private:
 	std::vector<LinkVariance>Polynomial; //3 
 	std::vector<Coefficient>Polynomial_coef;// x^3

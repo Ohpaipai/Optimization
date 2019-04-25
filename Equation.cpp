@@ -2,7 +2,6 @@
 
 
 
-
 //LinkEquation
 
 
@@ -134,6 +133,68 @@ LinkEquation LinkEquation::operator-(LinkEquation tem)
 	return ans;
 }
 
+double LinkEquation::Fxans(double x)
+{
+	double ans = 0;
+	for (int i = 0; i < this->Polynomial.size(); i++)
+	{
+		double t;
+		double tem=1;
+		std::string func = "";
+
+		if (this->Polynomial_coef[i].mathName != "") //有三角函數的話
+		{
+			for (int j = 0; j < this->Polynomial_coef[i].mathName.size(); j++)
+			{
+				func += tolower(this->Polynomial_coef[i].mathName[j]);
+			}
+			if (func == "sin")
+				t = this->Polynomial_coef[i].coefficient*std::sin(x);
+			else if (func == "cos")
+				t = this->Polynomial_coef[i].coefficient*std::cos(x);
+			else if (func == "tan")
+				t = this->Polynomial_coef[i].coefficient*std::tan(x);
+			else if (func == "csc")
+				t= this->Polynomial_coef[i].coefficient*((double)1 / std::sin(x));
+			else if (func == "sec")
+				t = this->Polynomial_coef[i].coefficient*((double)1 / std::cos(x));
+			else if (func == "cot")
+				t = this->Polynomial_coef[i].coefficient*((double)1 / std::tan(x));
+		}
+		else
+		{
+			t = this->Polynomial_coef[i].coefficient;
+		}
+		for (int j = 0; j < this->Polynomial[i].variable.size(); j++)
+		{
+			tem *= std::pow(x,this->Polynomial[i].variable[i].exponential);
+		}
+		ans += (tem*t); //相加
+	}
+	return ans;
+}
+
+double LinkEquation::GoldenSectionSearch(double lowBound, double middle, double upperBound, double tau)
+{
+	{
+		double x;
+		if (upperBound - middle > middle - lowBound)
+			x = middle + resphi * (upperBound - middle);
+		else
+			x = middle - resphi * (middle - lowBound);
+		if (std::abs(upperBound - lowBound) < tau*(std::abs(middle) + std::abs(x)))
+			return (lowBound + upperBound) / 2;
+		if (this->Fxans(x) < this->Fxans(middle)) {
+			if (upperBound - middle > middle - lowBound) return this->GoldenSectionSearch(middle,x,upperBound,tau);
+			else return this->GoldenSectionSearch(lowBound, x,middle, tau);
+		}
+		else {
+			if (upperBound - middle > middle - lowBound) return this->GoldenSectionSearch(lowBound,middle,x, tau);
+			else return this->GoldenSectionSearch(x,middle,upperBound, tau);
+		}
+	}
+}
+
 
 
 
@@ -211,6 +272,12 @@ void LinkVariance::insert(Variance _var)
 	{
 		if (*iter == _var) {
 			iter->exponential *= 2;
+			find = true;
+			break;
+		}
+		else if (iter->name == _var.name)
+		{
+			iter->exponential += _var.exponential;
 			find = true;
 			break;
 		}
