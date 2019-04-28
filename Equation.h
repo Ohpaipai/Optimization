@@ -5,6 +5,8 @@
 #include<vector>
 #include<math.h>
 #include<ctype.h>
+#include"VectorAndMatrix.h"
+#include"Equation.h"
 const double  phi = (1 + std::sqrt(5)) / 2;
 const double  resphi = (2 - phi);
 
@@ -97,8 +99,11 @@ public:
 	LinkEquation operator+(LinkEquation tem);//+
 	LinkEquation operator-(LinkEquation tem);//-
 	friend std::ostream& operator<<(std::ostream& os, const LinkEquation&);
-	double Fxans(double);
-	double GoldenSectionSearch(double lowBound, double middle, double upperBound, double tau);
+	double Fxans(std::string , double);
+	double TwoFxans(std::string, std::string, double , double); //三角函數支援x&y
+	double GoldenSectionSearch(double lowBound, double middle, double upperBound, double tau, std::string _name);
+	LinkEquation Powell2Golden(std::string, std::string,LinkEquation, double);//string為 你所要帶入數字 ,Linkequation為你會帶入的方程式
+	void Powell(std::string ,std::string,double,double);
 	
 private:
 	std::vector<LinkVariance>Polynomial; //3 
