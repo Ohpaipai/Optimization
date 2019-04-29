@@ -9,7 +9,7 @@
 #include"Equation.h"
 const double  phi = (1 + std::sqrt(5)) / 2;
 const double  resphi = (2 - phi);
-
+const double  w = 0.38197;
 
 
 
@@ -103,11 +103,14 @@ public:
 	double TwoFxans(std::string, std::string, double , double); //三角函數支援x&y
 	double GoldenSectionSearch(double lowBound, double middle, double upperBound, double tau, std::string _name);
 	LinkEquation Powell2Golden(std::string, std::string,LinkEquation, double);//string為 你所要帶入數字 ,Linkequation為你會帶入的方程式
-	void Powell(std::string ,std::string,double,double);
+	void Powell(std::string ,std::string,double,double,bool find);
+	void PowellForUpDown(double _x,double _y);
 	
 private:
 	std::vector<LinkVariance>Polynomial; //3 
 	std::vector<Coefficient>Polynomial_coef;// x^3
 	//互相對應 vector size兩個必定相同
+	double up;
+	double down;
 };
 
