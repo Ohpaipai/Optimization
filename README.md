@@ -5,3 +5,5 @@ variance要是為常數請在name上面放c,exp放0
 可以使用 方程式的 + - *  
 os 可以直接輸出  
 已用 f(X) 計算function-->fansx()  
+powell 暫時完成 第一個string為variable的名子 對應到 第一個double 初始值 第二個就對應到第二個  
+equation乘法前 請先判斷 是否前面的為空 空的話直接insert進去  
