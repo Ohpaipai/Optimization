@@ -5,12 +5,13 @@
 #include<vector>
 #include<math.h>
 #include<ctype.h>
-#include"VectorAndMatrix.h"
-#include"Equation.h"
+
 const double  phi = (1 + std::sqrt(5)) / 2;
 const double  resphi = (2 - phi);
 const double  w = 0.38197;
-
+#define pi 3.14159265359
+#define RadtoAng(N) N*180/pi
+#define AngtoRad(N) N*pi/180
 
 
 

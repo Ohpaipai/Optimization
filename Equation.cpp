@@ -343,6 +343,7 @@ LinkEquation LinkEquation::Powell2Golden(std::string _name, std::string _nname, 
 				LinkEquation group2;*/
 				double regesterNum = this->Polynomial_coef[i].coefficient;
 				LinkEquation tem(fun);
+				bool newequu = false;
 		//非coef處理
 		for (int j = 0; j < this->Polynomial[i].variable.size(); j++)
 		{
@@ -352,6 +353,8 @@ LinkEquation LinkEquation::Powell2Golden(std::string _name, std::string _nname, 
 			}
 			else if(_name==this->Polynomial[i].variable[j].name)//要形成的新方程式
 			{
+				 newequu = true;
+
 				for (int k = 0; k <this->Polynomial[i].variable[j].exponential-1; k++)
 				{
 					tem = tem * fun;//方程式自己*
@@ -362,7 +365,26 @@ LinkEquation LinkEquation::Powell2Golden(std::string _name, std::string _nname, 
 		{
 			tem.Polynomial_coef[k].coefficient *= regesterNum;//將成成出來方程式都常上細數
 		}
-		ans = ans + tem;//每次結果相加
+		if (newequu == false)
+		{
+			LinkEquation a;
+			Variance va;
+			va.name = "c";
+			va.exponential = 0;
+			Coefficient vc;
+			vc.mathName = "";
+			vc.coefficient = regesterNum;
+			LinkVariance va1;
+			va1.insert(va);
+			a.insert(va1, vc);
+			ans = ans + a;
+			
+		}
+		else
+		{
+			ans = ans + tem;//每次結果相加
+		}
+		
 		
 	}
 	return ans;
