@@ -1,6 +1,6 @@
 #include"Optimization.h"
 int main() {
-	std::string a="-1.35ysiny+y9+y(7+6)y";
+	std::string a="-1.35ysin(yy)+y9+y(7+6)y";
 	Optimization z(a);
 	z.getPostfix();
 	std::map<std::string, double>map;

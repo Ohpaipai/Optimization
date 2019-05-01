@@ -147,32 +147,56 @@ Optimization::Optimization(std::string _input)
 				{
 					if (sub.size() > 0)
 					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')')
+						if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+							sub.push_back(_input[i]);
+						else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
 						{
-							sub.push_back('*');
+							if (_input[i] != ')')
+							{
+								sub.push_back('*');
+								sub.push_back(_input[i]);
+							}
+							else
+							{
+								sub.push_back(_input[i]);
+							}
+						}
+						else {
 							sub.push_back(_input[i]);
 						}
-						else
-							sub.push_back(_input[i]);
 					}
 					else
+					{
 						sub.push_back(_input[i]);
+					}
 				}
 			
 			}
 			else {
-				if (sub.size() > 0)
+			if (sub.size() > 0)
+			{
+				if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+					sub.push_back(_input[i]);
+				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
 				{
-					if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')')
+					if (_input[i] != ')')
 					{
 						sub.push_back('*');
 						sub.push_back(_input[i]);
 					}
 					else
+					{
 						sub.push_back(_input[i]);
+					}
 				}
-				else
+				else {
 					sub.push_back(_input[i]);
+				}
+			}
+			else
+			{
+				sub.push_back(_input[i]);
+			}
 				}
 			
 			
@@ -184,8 +208,15 @@ Optimization::Optimization(std::string _input)
 			
 				if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
 				{
-					sub.push_back('*');
-					sub.push_back(_input[i]);
+					if (_input[i] != ')')
+					{
+						sub.push_back('*');
+						sub.push_back(_input[i]);
+					}
+					else
+					{
+						sub.push_back(_input[i]);
+					}
 				}
 				else {
 					sub.push_back(_input[i]);
@@ -203,8 +234,15 @@ Optimization::Optimization(std::string _input)
 					sub.push_back(_input[i]);
 				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
 				{
-					sub.push_back('*');
-					sub.push_back(_input[i]);
+					if (_input[i] != ')')
+					{
+						sub.push_back('*');
+						sub.push_back(_input[i]);
+					}
+					else
+					{
+						sub.push_back(_input[i]);
+					}
 				}
 				else {
 					sub.push_back(_input[i]);
