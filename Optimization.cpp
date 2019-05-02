@@ -7,7 +7,7 @@ int Optimization::priority(char op)
 		case '+':case '-': return (int)1;
 		case '*':case '/': return 2;
 		case'!':case'@':case'$':case '%':case '&':case '#':return 3;
-		case '^': return 4;
+		case '^': case '~':return 4;
 		default:            return 0;
 	}
 }
@@ -149,7 +149,7 @@ Optimization::Optimization(std::string _input)
 					{
 						if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
 							sub.push_back(_input[i]);
-						else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size() - 1]))
 						{
 							if (_input[i] != ')')
 							{
@@ -177,7 +177,7 @@ Optimization::Optimization(std::string _input)
 			{
 				if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
 					sub.push_back(_input[i]);
-				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size()-1]))
 				{
 					if (_input[i] != ')')
 					{
@@ -197,7 +197,7 @@ Optimization::Optimization(std::string _input)
 			{
 				sub.push_back(_input[i]);
 			}
-				}
+			}
 			
 			
 		}
@@ -206,7 +206,7 @@ Optimization::Optimization(std::string _input)
 			if (sub.size() > 0)
 			{
 			
-				if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+				if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size() - 1]))
 				{
 					if (_input[i] != ')')
 					{
@@ -230,7 +230,9 @@ Optimization::Optimization(std::string _input)
 		else {
 			if (sub.size() > 0)
 			{
-				if(_input[i] =='^'||this->priority(_input[i])==1|| this->priority(_input[i]) == 2)
+				if (_input[i] == '-' && !isdigit(sub[sub.size() - 1]) && !this->priority(sub[sub.size() - 1]))
+					sub.push_back('~');
+				else if(_input[i] =='^'||this->priority(_input[i])==1|| this->priority(_input[i]) == 2)
 					sub.push_back(_input[i]);
 				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
 				{
@@ -250,7 +252,12 @@ Optimization::Optimization(std::string _input)
 			}
 			else
 			{
-				sub.push_back(_input[i]);
+				if (_input[i] == '-')
+					sub.push_back('~');
+				else
+				{
+					sub.push_back(_input[i]);
+				}
 			}
 			
 		}
@@ -275,7 +282,7 @@ std::vector<std::string> Optimization::toPostfix()
 				stackSign.push_back(orignal[i]);
 				top++;
 				break;
-			case '+': case '-': case '*': case '/':case '^':case'!':case'@':case'$':case '%':case '&':case '#':
+			case '+': case '-': case '*': case '/':case '^':case'!':case'@':case'$':case '%':case '&':case '#':case('~'):
 				if (top > -1)
 				{
 					while (priority(stack[top]) >= priority(orignal[i])) {
@@ -406,6 +413,10 @@ double Optimization::eval(std::map < std::string, double > var)
 				ans.pop_back();
 				top--;
 			}
+		}
+		else if (postfix[i] == "~")
+		{
+			ans[top] *= -1;
 		}
 		else if (postfix[i] == "*") {
 			if (top == -1)

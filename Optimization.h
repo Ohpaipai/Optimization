@@ -6,7 +6,7 @@
 #include<set>
 #include<map>
 #include<sstream>
-/*sin='!' cos='@' tan='$' csc='%' sec='&' cot='#'*/
+/*sin='!' cos='@' tan='$' csc='%' sec='&' cot='#'  -='~'*/
 
 
 class Optimization
