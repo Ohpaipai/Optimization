@@ -19,6 +19,8 @@ Optimization::Optimization()
 	postfix.clear();
 	variable.clear();
 	stackSign.clear();
+	input.clear();
+	input = "";
 }
 
 Optimization::Optimization(const Optimization &a)
@@ -27,6 +29,7 @@ Optimization::Optimization(const Optimization &a)
 	variable = a.variable;
 	postfix = a.postfix;
 	stackSign = a.stackSign;
+	input = a.input;
 }
 
 Optimization::~Optimization()
@@ -35,233 +38,13 @@ Optimization::~Optimization()
 	postfix.clear();
 	variable.clear();
 	stackSign.clear();
+	input.clear();
 }
 
 Optimization::Optimization(std::string _input)
 {
-	std::string sub = "";
-	for (int i = 0; i <_input.size(); i++)
-	{
-		if (((_input[i] >= 65 && _input[i] <= 90) || _input[i] >= 97 && _input[i] <= 122))
-		{
-			if(i+2<_input.size())
-			{ 
-				if (std::tolower(_input[i]) == 's'&&std::tolower(_input[i + 1]) == 'i'&&std::tolower(_input[i + 2]) == 'n')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) ||sub[sub.size() - 1] == ')'|| ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('!');
-						}
-						else
-							sub.push_back('!');
-					}
-					else
-						sub.push_back('!');
-					i += 2;
-				}
-				else if (std::tolower(_input[i]) == 's'&&std::tolower(_input[i + 1]) == 'e'&&std::tolower(_input[i + 2]) == 'c')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('&');
-						}
-						else
-							sub.push_back('&');
-					}
-					else
-						sub.push_back('&');
-					i += 2;
-					i += 2;
-				}
-				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 'o'&&std::tolower(_input[i + 2]) == 's')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('@');
-						}
-						else
-							sub.push_back('@');
-					}
-					else
-						sub.push_back('@');
-					i += 2;
-				}
-				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 's'&&std::tolower(_input[i + 2]) == 'c')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('%');
-						}
-						else
-							sub.push_back('%');
-					}
-					else
-						sub.push_back('%');
-					i += 2;
-				}
-				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 'o'&&std::tolower(_input[i + 2]) == 't')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('#');
-						}
-						else
-							sub.push_back('#');
-					}
-					else
-						sub.push_back('#');
-					i += 2;
-				}
-				else if (std::tolower(_input[i]) == 't'&&std::tolower(_input[i + 1]) == 'a'&&std::tolower(_input[i + 2]) == 'n')
-				{
-					if (sub.size() > 0)
-					{
-						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-						{
-							sub.push_back('*');
-							sub.push_back('$');
-						}
-						else
-							sub.push_back('$');
-					}
-					else
-						sub.push_back('$');
-					i += 2;
-				}
-				else
-				{
-					if (sub.size() > 0)
-					{
-						if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
-							sub.push_back(_input[i]);
-						else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size() - 1]))
-						{
-							if (_input[i] != ')')
-							{
-								sub.push_back('*');
-								sub.push_back(_input[i]);
-							}
-							else
-							{
-								sub.push_back(_input[i]);
-							}
-						}
-						else {
-							sub.push_back(_input[i]);
-						}
-					}
-					else
-					{
-						sub.push_back(_input[i]);
-					}
-				}
-			
-			}
-			else {
-			if (sub.size() > 0)
-			{
-				if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
-					sub.push_back(_input[i]);
-				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size()-1]))
-				{
-					if (_input[i] != ')')
-					{
-						sub.push_back('*');
-						sub.push_back(_input[i]);
-					}
-					else
-					{
-						sub.push_back(_input[i]);
-					}
-				}
-				else {
-					sub.push_back(_input[i]);
-				}
-			}
-			else
-			{
-				sub.push_back(_input[i]);
-			}
-			}
-			
-			
-		}
-		else if (_input[i] == '(')
-		{
-			if (sub.size() > 0)
-			{
-			
-				if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122)||isdigit(sub[sub.size() - 1]))
-				{
-					if (_input[i] != ')')
-					{
-						sub.push_back('*');
-						sub.push_back(_input[i]);
-					}
-					else
-					{
-						sub.push_back(_input[i]);
-					}
-				}
-				else {
-					sub.push_back(_input[i]);
-				}
-			}
-			else
-			{
-				sub.push_back(_input[i]);
-			}
-		}
-		else {
-			if (sub.size() > 0)
-			{
-				if (_input[i] == '-' && !isdigit(sub[sub.size() - 1]) && !this->priority(sub[sub.size() - 1]))
-					sub.push_back('~');
-				else if(_input[i] =='^'||this->priority(_input[i])==1|| this->priority(_input[i]) == 2)
-					sub.push_back(_input[i]);
-				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-				{
-					if (_input[i] != ')')
-					{
-						sub.push_back('*');
-						sub.push_back(_input[i]);
-					}
-					else
-					{
-						sub.push_back(_input[i]);
-					}
-				}
-				else {
-					sub.push_back(_input[i]);
-				}
-			}
-			else
-			{
-				if (_input[i] == '-')
-					sub.push_back('~');
-				else
-				{
-					sub.push_back(_input[i]);
-				}
-			}
-			
-		}
-	}
+	input = _input;
+	std::string sub = this->dealstring(input);
 	orignal = sub;
 	std::cout << orignal << std::endl;
 	postfix = this->toPostfix();
@@ -334,7 +117,7 @@ std::vector<std::string> Optimization::toPostfix()
 					i++;
 					
 				}
-				if (tem.size() == 1 && ((tem[0] >= 65 && tem[0] <= 90) || tem[0] >= 97 && tem[0] <= 122))
+				if (tem.size() == 1 && ((tem[0] >= 65 && tem[0] <= 90) || tem[0] >= 97 && tem[0] <= 122)) //表示為variable
 				{
 					
 					variable.insert(tem[0]);
@@ -556,6 +339,273 @@ double Optimization::eval(std::map < std::string, double > var)
 	return ans[0];
 }
 
+std::string Optimization::dealstring(std::string _input)
+{
+	std::string sub = "";
+	for (int i = 0; i < _input.size(); i++)
+	{
+		if (((_input[i] >= 65 && _input[i] <= 90) || _input[i] >= 97 && _input[i] <= 122))
+		{
+			if (i + 2 < _input.size())
+			{
+				if (std::tolower(_input[i]) == 's'&&std::tolower(_input[i + 1]) == 'i'&&std::tolower(_input[i + 2]) == 'n')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('!');
+						}
+						else
+							sub.push_back('!');
+					}
+					else
+						sub.push_back('!');
+					i += 2;
+				}
+				else if (std::tolower(_input[i]) == 's'&&std::tolower(_input[i + 1]) == 'e'&&std::tolower(_input[i + 2]) == 'c')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('&');
+						}
+						else
+							sub.push_back('&');
+					}
+					else
+						sub.push_back('&');
+					i += 2;
+					i += 2;
+				}
+				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 'o'&&std::tolower(_input[i + 2]) == 's')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('@');
+						}
+						else
+							sub.push_back('@');
+					}
+					else
+						sub.push_back('@');
+					i += 2;
+				}
+				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 's'&&std::tolower(_input[i + 2]) == 'c')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('%');
+						}
+						else
+							sub.push_back('%');
+					}
+					else
+						sub.push_back('%');
+					i += 2;
+				}
+				else if (std::tolower(_input[i]) == 'c'&&std::tolower(_input[i + 1]) == 'o'&&std::tolower(_input[i + 2]) == 't')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('#');
+						}
+						else
+							sub.push_back('#');
+					}
+					else
+						sub.push_back('#');
+					i += 2;
+				}
+				else if (std::tolower(_input[i]) == 't'&&std::tolower(_input[i + 1]) == 'a'&&std::tolower(_input[i + 2]) == 'n')
+				{
+					if (sub.size() > 0)
+					{
+						if (isdigit(sub[sub.size() - 1]) || sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+						{
+							sub.push_back('*');
+							sub.push_back('$');
+						}
+						else
+							sub.push_back('$');
+					}
+					else
+						sub.push_back('$');
+					i += 2;
+				}
+				else
+				{
+					if (sub.size() > 0)
+					{
+						if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+							sub.push_back(_input[i]);
+						else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122) || isdigit(sub[sub.size() - 1]))
+						{
+							if (_input[i] != ')')
+							{
+								sub.push_back('*');
+								sub.push_back(_input[i]);
+							}
+							else
+							{
+								sub.push_back(_input[i]);
+							}
+						}
+						else {
+							sub.push_back(_input[i]);
+						}
+					}
+					else
+					{
+						sub.push_back(_input[i]);
+					}
+				}
+
+			}
+			else {
+				if (sub.size() > 0)
+				{
+					if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+						sub.push_back(_input[i]);
+					else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122) || isdigit(sub[sub.size() - 1]))
+					{
+						if (_input[i] != ')')
+						{
+							sub.push_back('*');
+							sub.push_back(_input[i]);
+						}
+						else
+						{
+							sub.push_back(_input[i]);
+						}
+					}
+					else {
+						sub.push_back(_input[i]);
+					}
+				}
+				else
+				{
+					sub.push_back(_input[i]);
+				}
+			}
+
+
+		}
+		else if (_input[i] == '(')
+		{
+			if (sub.size() > 0)
+			{
+
+				if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122) || isdigit(sub[sub.size() - 1]))
+				{
+					if (_input[i] != ')')
+					{
+						sub.push_back('*');
+						sub.push_back(_input[i]);
+					}
+					else
+					{
+						sub.push_back(_input[i]);
+					}
+				}
+				else {
+					sub.push_back(_input[i]);
+				}
+			}
+			else
+			{
+				sub.push_back(_input[i]);
+			}
+		}
+		else {
+			if (sub.size() > 0)
+			{
+				if (_input[i] == '-' && !isdigit(sub[sub.size() - 1]) && this->priority(sub[sub.size() - 1]) != 3) //變負號
+					sub.push_back('~');
+				else if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+					sub.push_back(_input[i]);
+				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+				{
+					if (_input[i] != ')')
+					{
+						sub.push_back('*');
+						sub.push_back(_input[i]);
+					}
+					else
+					{
+						sub.push_back(_input[i]);
+					}
+				}
+				else {
+					sub.push_back(_input[i]);
+				}
+			}
+			else
+			{
+				if (_input[i] == '-')
+					sub.push_back('~');
+				else
+				{
+					sub.push_back(_input[i]);
+				}
+			}
+
+		}
+	}
+	return sub;
+}
+
+std::string Optimization::NewEquation(std::map<std::string, std::string>_variable)
+{
+	std::string ans = "";
+	for (int i = 0; i <orignal.size(); i++)
+	{
+		if (((orignal[i] >= 65 && orignal[i] <= 90) || orignal[i] >= 97 && orignal[i] <= 122))
+		{
+			std::set<char>::iterator it;
+			std::map<std::string, std::string>::iterator iter;
+			bool isFind = false;
+			for (it=variable.begin();it!=variable.end();it++)
+			{
+				std::string tem = "";
+				tem += *it;
+				iter = _variable.find(tem);
+				if (iter != _variable.end())//找到
+				{
+					ans.push_back('(');
+					ans += this->dealstring(iter->second);
+					ans.push_back(')');
+					isFind = true;
+					break;
+				}
+
+				
+			}
+			if (!isFind)
+			{
+				ans.push_back(orignal[i]);
+			}
+		}
+		else {
+			ans.push_back(orignal[i]);
+		}
+
+	}
+	return ans;
+}
+
 bool Optimization::judgeTrigonometric(char a, char b, char c)
 {
 	if (a == 's'&&b == 'i'&&c == 'n')
@@ -584,4 +634,51 @@ bool Optimization::judgeTrigonometric(char a, char b, char c)
 	}
 	else
 		return false;
+}
+
+double Optimization::getNDimension()
+{
+	return variable.size();
+}
+
+std::string Optimization::getinput()
+{
+	return input;
+}
+
+std::string Optimization::getorignal()
+{
+	return orignal;
+}
+
+double Optimization::GoldenSearch(double lowerbound, double middle, double upperbound, const double tau)
+{
+	/*
+		lowerbound =leftbound
+		upperbound =rightbound
+		middle=left<middle<right
+	*/
+	double x;
+	if (upperbound - middle > middle - lowerbound)
+		x = middle + resphi * (upperbound - middle);
+	else
+		x = middle - resphi * (middle-lowerbound);
+	if (abs(middle - lowerbound) < tau*(abs(middle) + abs(x)))
+		return (lowerbound + upperbound) / 2;
+	std::map<std::string, double>fx;
+	std::map<std::string, double>fb;
+	std::string v = "";
+	std::set<char>::iterator it=variable.begin();
+	v +=*it;
+	fx.insert(std::pair<std::string, double>(v, x));
+	fb.insert(std::pair<std::string, double>(v, middle));
+	if (this->eval(fx) > this->eval(fb)) {
+		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(middle, x, upperbound, tau);
+		else return this->GoldenSearch(lowerbound, x, middle, tau);
+	}
+	else {
+		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(lowerbound, middle, x, tau);
+		else return this->GoldenSearch( x, middle,upperbound,tau);
+	}
+
 }
