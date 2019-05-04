@@ -10,7 +10,12 @@
 /*sin='!' cos='@' tan='$' csc='%' sec='&' cot='#'  -='~'*/
 const double phi = (1.0 + std::sqrt(5)) / 2.0;
 const double resphi = 2 - phi;
+typedef struct MyStruct
+{
+	double upperbound;
+	double lowerbound;
 
+}restrictVariable;
 class Optimization
 {
 public:
@@ -28,7 +33,8 @@ public:
 	double getNDimension();//得到有幾種變數
 	std::string getinput();//輸入字串
 	std::string getorignal();//處理後字串
-	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau);
+	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau, double count);
+	void Powell(std::map<std::string,double>initial, std::map<std::string,restrictVariable> rrestrict, double err,double count);
 private:
 	std::string orignal;//處理後字串
 	std::string input;//原始輸入

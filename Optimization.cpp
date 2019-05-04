@@ -192,7 +192,7 @@ double Optimization::eval(std::map < std::string, double > var)
 				ans[top] *= -1;
 			}
 			else {
-				ans[top - 1] = ans[top] + ans[top - 1];
+				ans[top - 1] = ans[top-1] - ans[top];
 				ans.pop_back();
 				top--;
 			}
@@ -532,7 +532,7 @@ std::string Optimization::dealstring(std::string _input)
 		else {
 			if (sub.size() > 0)
 			{
-				if (_input[i] == '-' && !isdigit(sub[sub.size() - 1]) && this->priority(sub[sub.size() - 1]) != 3) //變負號
+				if (sub[sub.size()-1]=='~') //變負號
 					sub.push_back('~');
 				else if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
 					sub.push_back(_input[i]);
@@ -579,16 +579,19 @@ std::string Optimization::NewEquation(std::map<std::string, std::string>_variabl
 			bool isFind = false;
 			for (it=variable.begin();it!=variable.end();it++)
 			{
-				std::string tem = "";
-				tem += *it;
-				iter = _variable.find(tem);
-				if (iter != _variable.end())//找到
+				if (orignal[i] ==*it)
 				{
-					ans.push_back('(');
-					ans += this->dealstring(iter->second);
-					ans.push_back(')');
-					isFind = true;
-					break;
+					std::string tem = "";
+					tem += *it;
+					iter = _variable.find(tem);
+					if (iter != _variable.end())//找到
+					{
+						ans.push_back('(');
+						ans += this->dealstring(iter->second);
+						ans.push_back(')');
+						isFind = true;
+						break;
+					}
 				}
 
 				
@@ -651,8 +654,9 @@ std::string Optimization::getorignal()
 	return orignal;
 }
 
-double Optimization::GoldenSearch(double lowerbound, double middle, double upperbound, const double tau)
+double Optimization::GoldenSearch(double lowerbound, double middle, double upperbound, const double tau,double count)
 {
+	count++;
 	/*
 		lowerbound =leftbound
 		upperbound =rightbound
@@ -663,22 +667,222 @@ double Optimization::GoldenSearch(double lowerbound, double middle, double upper
 		x = middle + resphi * (upperbound - middle);
 	else
 		x = middle - resphi * (middle-lowerbound);
-	if (abs(middle - lowerbound) < tau*(abs(middle) + abs(x)))
+	if (abs(upperbound - lowerbound) < tau*(abs(middle) + abs(x))||count>=20)
 		return (lowerbound + upperbound) / 2;
 	std::map<std::string, double>fx;
 	std::map<std::string, double>fb;
 	std::string v = "";
 	std::set<char>::iterator it=variable.begin();
-	v +=*it;
+	char a = *it;
+	v +=a;
 	fx.insert(std::pair<std::string, double>(v, x));
 	fb.insert(std::pair<std::string, double>(v, middle));
 	if (this->eval(fx) > this->eval(fb)) {
-		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(middle, x, upperbound, tau);
-		else return this->GoldenSearch(lowerbound, x, middle, tau);
+		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(middle, x, upperbound, tau,count);
+		else return this->GoldenSearch(lowerbound, x, middle, tau,count);
 	}
 	else {
-		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(lowerbound, middle, x, tau);
-		else return this->GoldenSearch( x, middle,upperbound,tau);
+		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(lowerbound, middle, x, tau,count);
+		else return this->GoldenSearch( x, middle,upperbound,tau,count);
 	}
+
+}
+
+void Optimization::Powell(std::map<std::string, double> initial, std::map<std::string, restrictVariable> rrestrict,double err,double count)
+{
+	std::cout << "////////////////////////////////////\n";
+#pragma region 初始化
+	std::map<std::string, double> infirst = initial;
+	double fxFirst = this->eval(initial);//初始值
+	double *N = new double[this->getNDimension()];//看哪個維度
+	double *Ngolden = new double[this->getNDimension() + 1];//每個維度goldenans
+	double *fx_in_everystepAns = new double[this->getNDimension() + 1];//每個維度ans
+	for (int i = 0; i < this->getNDimension(); i++) //初始化
+	{
+		if (i == 0) N[0] = 1;
+		else N[i] = 0;
+
+		Ngolden[i] = 0;
+	}
+	double ans;
+#pragma endregion
+	count++;
+	for (int i = 0; i <=this->getNDimension(); i++)
+	{
+		if (i == this->getNDimension())
+		{
+			//作全部為的查找
+			std::map<std::string, double>::iterator it_initial = initial.begin();
+			std::map<std::string, std::string>::iterator it_makeEquation;
+			std::map<std::string, restrictVariable>::iterator it_strict = rrestrict.begin();
+			std::map<std::string, std::string>makeEquation;
+			double lower, upper;//forgolden
+			for (int j = 0; j < this->getNDimension(); j++) //製作goldenequation
+			{
+				std::stringstream ss;
+				std::string make = "";
+
+				ss << it_initial->second;
+				ss >> make;
+				make += "+ a";
+
+				lower = it_strict->second.lowerbound - it_initial->second;
+				upper = it_strict->second.upperbound - it_initial->second;
+				std::cout << "***********************************" << lower << "    ,    " << upper << std::endl;
+				makeEquation.insert(std::pair<std::string, std::string>(it_initial->first, make));
+				it_initial++;
+
+			}
+			std::string newE = this->NewEquation(makeEquation);//製作出下次的function
+			Optimization t(newE);
+			Ngolden[i] = t.GoldenSearch(lower, 3, upper, 1e-8,0);
+			for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+			{
+				it_initial->second += Ngolden[i];
+			}
+			fx_in_everystepAns[i] = this->eval(initial);//每個步驟的f(X)
+			std::cout << count << "-->" << i << std::endl;
+			std::cout << "{ ";
+			for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+			{
+
+				std::cout << it_initial->second << "   ";
+			}
+			std::cout << "}" << std::endl;;
+			std::cout << "f(X) = " << fx_in_everystepAns[i] << std::endl;
+
+
+		}
+		else {
+			if (i != 0) { N[i] = 1; N[i - 1] = 0; }
+
+			std::map<std::string, double>::iterator it_initial = initial.begin();
+			std::map<std::string, std::string>::iterator it_makeEquation;
+			std::map<std::string, restrictVariable>::iterator it_strict = rrestrict.begin();
+			std::map<std::string, std::string>makeEquation;
+			double lower, upper;//forgolden
+			std::string thisname = "";
+
+
+
+
+			for (int j = 0; j < this->getNDimension(); j++) //製作goldenequation
+			{
+				std::stringstream ss;
+				std::string make = "";
+				if (N[j] == 1) {
+					ss << it_initial->second;
+					ss >> make;
+					make += "+ a";
+					thisname = it_initial->first;
+					lower = it_strict->second.lowerbound - it_initial->second;
+					upper = it_strict->second.upperbound - it_initial->second;
+					//std::cout << "test: -->" << it_initial->first <<"  "<<make<< std::endl;
+					makeEquation.insert(std::pair<std::string, std::string>(it_initial->first, make));
+				}
+				else {
+					ss << it_initial->second;
+					ss >> make;
+					//std::cout << "test: -->" << it_initial->first << "  " << it_initial->second<<  std::endl;
+					makeEquation.insert(std::pair<std::string, std::string>(it_initial->first, make));
+				}
+				it_initial++;
+				it_strict++;
+			}
+			std::string newE = this->NewEquation(makeEquation);//製作出下次的function
+			Optimization t(newE);
+			//std::cout <<"-------------------------------------------------------------->" <<newE << std::endl;
+			Ngolden[i] = t.GoldenSearch(lower, 2, upper, 1e-8,0);
+			initial[thisname] += Ngolden[i];//找出那個點的
+			fx_in_everystepAns[i] = this->eval(initial);//每個步驟的f(X)
+			ans = fx_in_everystepAns[i];
+
+
+
+
+
+
+
+			//cout
+			std::cout << count << "-->" << i << std::endl;
+			std::cout << "{ ";
+			for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+			{
+
+				std::cout << it_initial->second << "   ";
+			}
+			std::cout << "}" << std::endl;;
+			std::cout << "f(X) = " << fx_in_everystepAns[i] << std::endl;
+		}
+		
+
+
+
+
+
+	}
+	
+	delete[] N;
+	delete[] Ngolden;
+	delete[] fx_in_everystepAns;
+	if (count >= 20) {
+		std::map<std::string, double>::iterator it_initial = initial.begin();
+		std::cout <<  "Ans  :" << std::endl;
+		std::cout << "{ ";
+		for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+		{
+
+			std::cout << it_initial->second << "   ";
+		}
+		std::cout << "}" << std::endl;;
+		std::cout << "f(X) = " << ans << std::endl;
+	}
+	else
+	{
+		if (std::abs((std::abs(ans) - std::abs(fxFirst))) <= err)
+		{
+			std::map<std::string, double>::iterator it_initial = initial.begin();
+			std::cout << "Ans  :" << std::endl;
+			std::cout << "{ ";
+			for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+			{
+
+				std::cout << it_initial->second << "   ";
+			}
+			std::cout << "}" << std::endl;;
+			std::cout << "f(X) = " << ans << std::endl;
+		}
+		else {
+			int jud = 0;
+			std::map<std::string, double>::iterator it_initial = initial.begin();
+			std::map<std::string, double>::iterator it_initial2 = initial.begin();
+			for (it_initial = initial.begin(), it_initial2=infirst.begin(); it_initial != initial.end(),it_initial2!=infirst.end(); it_initial++,it_initial2++) //X變化量
+			{
+
+				jud+=(it_initial->second - it_initial2->second)*(it_initial->second - it_initial2->second);
+			}
+
+			if (jud <= err) {
+				std::map<std::string, double>::iterator it_initial = initial.begin();
+				std::cout << "Ans  :" << std::endl;
+				std::cout << "{ ";
+				for (it_initial = initial.begin(); it_initial != initial.end(); it_initial++)
+				{
+
+					std::cout << it_initial->second << "   ";
+				}
+				std::cout << "}" << std::endl;;
+				std::cout << "f(X) = " << ans << std::endl;
+			}
+			else {
+				this->Powell(initial, rrestrict,err,count);
+			}
+		}
+
+	}
+
+
+	return;
+	
 
 }
