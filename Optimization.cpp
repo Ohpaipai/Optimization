@@ -677,7 +677,7 @@ double Optimization::GoldenSearch(double lowerbound, double middle, double upper
 	v +=a;
 	fx.insert(std::pair<std::string, double>(v, x));
 	fb.insert(std::pair<std::string, double>(v, middle));
-	if (this->eval(fx) > this->eval(fb)) {
+	if (this->eval(fx) < this->eval(fb)) {
 		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(middle, x, upperbound, tau,count);
 		else return this->GoldenSearch(lowerbound, x, middle, tau,count);
 	}

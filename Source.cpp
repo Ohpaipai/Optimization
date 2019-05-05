@@ -1,6 +1,6 @@
 #include"Optimization.h"
 int main() {
-	std::string a="3+(x-1.5*y)^2+(y-2)^2";
+	std::string a="x^2+x-2*x^0.5";
 	Optimization z(a);
 	z.getPostfix();
 	std::map<std::string, double>map;
@@ -9,7 +9,7 @@ int main() {
 	std::cout << z.eval(map) << std::endl;
 	restrictVariable r;
 	r.lowerbound = 0;
-	r.upperbound = 5;
+	r.upperbound = 70;
 	std::map<std::string,restrictVariable>map2;
 	map2.insert(std::pair<std::string, restrictVariable>("y", r));
 	map2.insert(std::pair<std::string, restrictVariable>("x", r));
