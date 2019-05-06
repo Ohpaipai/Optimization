@@ -35,6 +35,7 @@ public:
 	std::string getorignal();//處理後字串
 	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau, double count);
 	void Powell(std::map<std::string,double>initial, std::map<std::string,restrictVariable> rrestrict, double err,double count);
+	std::string differentiation(std::string destination);
 private:
 	std::string orignal;//處理後字串
 	std::string input;//原始輸入
