@@ -771,38 +771,270 @@ double Optimization::GoldenSearch(double lowerbound, double middle, double upper
 
 }
 
-void Optimization::Powell(std::map<std::string, double> initial, std::map<std::string, restrictVariable> rrestrict, std::queue<std::map<std::string, double>> nvec,double err,double count)
+void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double err,double count)
 {
+	count++;
+	std::map<std::string, double>newpush;
+	std::map<std::string, double>Firstvec = initial;
 	std::map<std::string, double>::iterator it_vec;
 	std::map<std::string, double>::iterator it_intial;
 	std::map<std::string, restrictVariable>::iterator it_restrict;
 	double *NgoldenAns = new double[this->getNDimension()];
-	for (int i = 0; i <=this->getNDimension(); i++)
+	double *FAns = new double[this->getNDimension()];
+	double Finitial = this->eval(initial);
+	std::queue<std::map<std::string, double>> newvec = nvec;
+	newvec.pop();//將第一個pop掉
+
+	#pragma region 每一個維度做查找
+	for (int i = 0; i < this->getNDimension(); i++)
 	{
-		if (i == this->getNDimension()) //做第三次查找
+		double upperbound = 2.22507e-308;
+		double lowerbound = 1.79769e+308;
+		std::string make = "";
+		std::map<std::string, std::string> newequ;
+		//找出邊界與製作function
+		for (it_vec = nvec.front().begin(); it_vec != nvec.front().end(); it_vec++)
 		{
-
-		}
-		else { //其他次
-			double upperbound= 2.22507e-308;
-			double lowerbound= 1.79769e+308;
-
-			std::string make = "";
-			std::map<std::string, std::string> newequ;
-			//找出邊界與製作function
-			for (it_vec=nvec.front().begin();it_vec!=nvec.front().end();it_vec++)
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
 			{
-				if (it_vec->second != 0)
+				if (it_intial->first == it_vec->first)//是否變數一樣
 				{
+					double low, high;
+					//判斷做的矩陣是否為0
+					//std::cout <<"test" <<it_vec->second << std::endl;
+					if (it_vec->second == 0)
+					{
+						std::stringstream ss;
+						std::string t;
+						ss << it_intial->second;
+						ss >> t;
+						make = t;
+						newequ.insert(std::pair<std::string, std::string>(it_intial->first, make));
+					}
+					else
+					{
+						
+						std::stringstream ss, ss2;
+						std::string t, t2;
+						ss << it_vec->second;
+						ss >> t;
+						ss2 << it_intial->second;
+						ss2 >> t2;
+						make = t2;
+						make += "+x*";
+						make +=t;
+
+						newequ.insert(std::pair<std::string, std::string>(it_intial->first, make));
+
+						it_restrict = rrestrict.find(it_intial->first);
+						low = it_intial->second - it_restrict->second.upperbound;
+						high = it_intial->second - it_restrict->second.upperbound;
+						if (low < lowerbound) lowerbound = low;
+						if (high > upperbound) upperbound = high;
+					}
+				}
+			}
+		}
+
+
+		
+
+
+
+		double middle = (upperbound - lowerbound) * phi;
+		std::string ne = this->NewEquation(newequ);
+		Optimization newop(ne);
+		NgoldenAns[i] = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-8, 0);
+		for (it_vec = nvec.front().begin(); it_vec != nvec.front().end(); it_vec++) //改變initial
+		{
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				if (it_intial->first == it_vec->first)//是否變數一樣
+				{
+					double judgeg=it_intial->second + NgoldenAns[i] * it_vec->second;//initial改變 判斷超過邊界
+					it_restrict = rrestrict.find(it_intial->first);
+					if (judgeg > it_restrict->second.upperbound) {
+						it_intial->second = it_restrict->second.upperbound;
+					}
+					else if (judgeg < it_restrict->second.lowerbound) {
+						it_intial->second = it_restrict->second.lowerbound;
+					}
+					else {
+						it_intial->second = judgeg;
+					}
 
 				}
 			}
-
 		}
 
-	}
-	
+		FAns[i] = this->eval(initial);
 
+
+
+#pragma region cout
+		std::cout << "------------------------------------------------------------------------------------\n";
+		std::cout << "第" << count << "次之" << i << "\n";
+		std::cout << "Vector為\n{ ";
+		for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+		{
+			std::cout << it_intial->second << "  ";
+		}
+		std::cout << "}\n";
+		std::cout << "F(x)=" << FAns[i] << "\n";
+		std::cout << "------------------------------------------------------------------------------------\n";
+#pragma endregion
+
+		nvec.pop();
+	}
+	#pragma endregion
+
+	#pragma region 查找new vertex
+		//做第三次
+		double upperbound = 2.22507e-308;
+		double lowerbound = 1.79769e+308;
+		std::string make = "";
+		std::map<std::string, std::string> newequ;
+		//找出邊界與製作function
+		int i = 0;
+		for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				
+					double low, high;
+					//判斷做的矩陣是否為0
+					
+						
+						std::stringstream ss, ss2;
+						std::string t, t2;
+						ss <<NgoldenAns[i];
+						ss >> t;
+						ss2 << it_intial->second;
+						ss2 >> t2;
+						make = t2;
+						make += "+x*";
+						make += t;
+						newequ.insert(std::pair<std::string, std::string>(it_intial->first, make));
+						it_restrict = rrestrict.find(it_intial->first);
+						newpush.insert(std::pair<std::string,double>(it_intial->first,NgoldenAns[i]));//製作新的探查點
+						low = it_intial->second - it_restrict->second.upperbound;
+						high = it_intial->second - it_restrict->second.upperbound;
+						if (low < lowerbound) lowerbound = low;
+						if (high > upperbound) upperbound = high;
+				
+				i++;
+			}
+		
+		double middle = (upperbound - lowerbound) * phi;
+		std::string ne = this->NewEquation(newequ);
+		Optimization newop(ne);
+		double FinalAns = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-8, 0);
+		
+		i = 0;
+		
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				
+					double judgeg = it_intial->second + NgoldenAns[i] * FinalAns;//initial改變
+					it_restrict = rrestrict.find(it_intial->first);
+					if (judgeg > it_restrict->second.upperbound) {
+						it_intial->second = it_restrict->second.upperbound;
+					}
+					else if (judgeg < it_restrict->second.lowerbound) {
+						it_intial->second = it_restrict->second.lowerbound;
+					}
+					else {
+						it_intial->second = judgeg;
+					}
+
+					i++;
+				
+			}
+			double Finalfx = this->eval(initial);
+		
+		newvec.push(newpush);//第三次點取代
+		#pragma region cout
+		std::cout << "------------------------------------------------------------------------------------\n";
+		std::cout << "第" << count << "次之" << this->getNDimension() << "\n";
+		std::cout << "Vector為\n{ ";
+		for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+		{
+			std::cout << it_intial->second << "  ";
+		}
+		std::cout << "}\n";
+		std::cout << "F(x)=" << Finalfx << "\n";
+		std::cout << "------------------------------------------------------------------------------------\n";
+#pragma endregion
+	#pragma endregion
+
+	#pragma region 檢查是否符合範圍
+		if (count > 20)
+		{
+		#pragma region cout
+		
+			std::cout << "------------------------------------------------------------------------------------\n";
+			std::cout << "Ans\n";
+			std::cout << "Vector為\n{ ";
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				std::cout << it_intial->second << "  ";
+			}
+			std::cout << "}\n";
+			std::cout << "F(x)=" << Finalfx << "\n";
+			std::cout << "------------------------------------------------------------------------------------\n";
+#pragma endregion
+			return;
+		}
+		else if (std::abs((Finalfx - Finitial)) > err) {
+
+			std::map<std::string, double>Tx;
+			double check2 = 0;
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				for (it_vec = Firstvec.begin(); it_vec != Firstvec.end(); it_vec++)
+				{
+					if (it_intial->first == it_vec->first)
+					{
+						check2 += std::pow((it_intial->second-it_vec->second),2);
+					}
+				}
+			}
+			if (check2 > err)
+			{
+				this->Powell(newvec,err,count);
+			}
+			else {
+#pragma region cout
+
+				std::cout << "------------------------------------------------------------------------------------\n";
+				std::cout << "Ans\n";
+				std::cout << "Vector為\n{ ";
+				for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+				{
+					std::cout << it_intial->second << "  ";
+				}
+				std::cout << "}\n";
+				std::cout << "F(x)=" << Finalfx << "\n";
+				std::cout << "------------------------------------------------------------------------------------\n";
+#pragma endregion
+			}
+		}
+		else {
+#pragma region cout
+
+			std::cout << "------------------------------------------------------------------------------------\n";
+			std::cout << "Ans\n";
+			std::cout << "Vector為\n{ ";
+			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			{
+				std::cout << it_intial->second << "  ";
+			}
+			std::cout << "}\n";
+			std::cout << "F(x)=" << Finalfx << "\n";
+			std::cout << "------------------------------------------------------------------------------------\n";
+#pragma endregion
+		}
+	#pragma endregion
+
+		return;
 }
 
 std::string Optimization::differentiation(std::string destination)
@@ -1050,4 +1282,14 @@ std::string Optimization::differentiation(std::string destination)
 		}
 	}
 	return temofinterval[ans[top]];
+}
+
+void Optimization::insertInitialVariable(std::string _name, double _num)
+{
+	initial.insert(std::pair<std::string,double>(_name,_num));
+}
+
+void Optimization::insertEveryVariableRestrict(std::string _name, restrictVariable _num)
+{
+	rrestrict.insert(std::pair<std::string, restrictVariable>(_name, _num));
 }

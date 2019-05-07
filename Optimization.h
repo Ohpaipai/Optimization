@@ -35,13 +35,17 @@ public:
 	std::string getinput();//輸入字串
 	std::string getorignal();//處理後字串
 	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau, double count);
-	void Powell(std::map<std::string,double>initial, std::map<std::string,restrictVariable> rrestrict,std::queue<std::map<std::string, double>> nvec, double err,double count);
+	void Powell(std::queue<std::map<std::string, double>> nvec, double err,double count);
 	std::string differentiation(std::string destination);
+	void insertInitialVariable(std::string,double);
+	void insertEveryVariableRestrict(std::string, restrictVariable);
 private:
 	std::string orignal;//處理後字串
 	std::string input;//原始輸入
 	std::vector<std::string>postfix;//轉成後序式
 	std::set<char>variable;//變數
 	std::string stackSign;//符號stack
+	std::map<std::string, double> initial;
+	std::map<std::string, restrictVariable> rrestrict;
 };
 
