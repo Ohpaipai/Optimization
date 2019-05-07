@@ -7,6 +7,7 @@
 #include<map>
 #include<sstream>
 #include<cmath>
+#include<queue>
 /*sin='!' cos='@' tan='$' csc='%' sec='&' cot='#'  -='~'*/
 const double phi = (1.0 + std::sqrt(5)) / 2.0;
 const double resphi = 2 - phi;
@@ -30,11 +31,11 @@ public:
 	std::string dealstring(std::string);//處理輸入字串
 	std::string NewEquation(std::map<std::string,std::string>);//創到新的equation(variable為equationn)
 	bool judgeTrigonometric(char, char, char);//判斷是否接下去為三角函數
-	double getNDimension();//得到有幾種變數
+	int getNDimension();//得到有幾種變數
 	std::string getinput();//輸入字串
 	std::string getorignal();//處理後字串
 	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau, double count);
-	void Powell(std::map<std::string,double>initial, std::map<std::string,restrictVariable> rrestrict, double err,double count);
+	void Powell(std::map<std::string,double>initial, std::map<std::string,restrictVariable> rrestrict,std::queue<std::map<std::string, double>> nvec, double err,double count);
 	std::string differentiation(std::string destination);
 private:
 	std::string orignal;//處理後字串
