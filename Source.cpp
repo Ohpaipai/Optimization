@@ -1,6 +1,7 @@
 #include"Optimization.h"
 int main() {
-	std::string a="7+x^2-3*x*y+3.25*y^2-4*y";
+	std::string a="(2 * x ^ 1 * 1) + 1 - (0 * x^ 0.5 + 2 * (0.5 * x ^ -0.5 * 1))+!-x";
+	//7 + x ^ 2 - 3 * x * y + 3.25 * y ^ 2 - 4 * y
 	std::string b = "3*-1";
 	Optimization c(b);
 	Optimization z(a);
@@ -20,9 +21,9 @@ int main() {
 	map2.insert(std::pair<std::string, restrictVariable>("y", r));
 	map2.insert(std::pair<std::string, restrictVariable>("x", r));
 	Optimization e(z.differentiation("x"));
-	Optimization d(e.differentiation("x"));
-	std::cout << e.eval(map) << std::endl;
-	std::cout << d.eval(map) << std::endl;
+	//Optimization d(e.differentiation("x"));
+	//std::cout << e.eval(map) << std::endl;
+	//std::cout << d.eval(map) << std::endl;
 	z.insertInitialVariable("x", 50);
 	z.insertInitialVariable("y", 30);
 	z.insertEveryVariableRestrict("x", r);
@@ -36,7 +37,7 @@ int main() {
 	std::queue<std::map<std::string, double>>n;
 	n.push(x);
 	n.push(x2);
-	z.Powell(n,1e-6,0);
+	//z.Powell(n,1e-6,0);
 	/*std::map<std::string, std::string>map2;
 	map2.insert(std::pair<std::string, std::string>("y","1+2x"));
 	std::cout << z.NewEquation(map2) << std::endl;*/

@@ -47,7 +47,6 @@ Optimization::Optimization(std::string _input)
 	input = _input;
 	std::string sub = this->dealstring(input);
 	orignal = sub;
-	
 	std::cout << orignal << std::endl;
 	postfix = this->toPostfix();
 
@@ -543,39 +542,42 @@ std::string Optimization::dealstring(std::string _input)
 			}
 		}
 		else {
-			if (sub.size() > 0)
+			if (_input[i] != ' ' && _input[i]!= '　')
 			{
-				if (sub[sub.size()-1]=='~'&&_input[i]=='-') //變負號
-					sub.push_back('~');
-				else if(_input[i] =='-'&&(this->priority(sub[sub.size() - 1]) == 1 || this->priority(sub[sub.size() - 1]) == 2))
+				if (sub.size() > 0)
 				{
-					sub.push_back('~');
-				}
-				else if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
-					sub.push_back(_input[i]);
-				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
-				{
-					if (_input[i] != ')')
+					if ((sub[sub.size() - 1] == '(' || sub[sub.size() - 1] == '~'|| sub[sub.size() - 1]=='^' || sub[sub.size() - 1] == '*' || sub[sub.size() - 1] == '/' || priority(sub[sub.size() - 1]) ==3) && _input[i] == '-') //變負號
+						sub.push_back('~');
+					else if (_input[i] == '-' && (this->priority(sub[sub.size() - 1]) == 1 || this->priority(sub[sub.size() - 1]) == 2))
 					{
-						sub.push_back('*');
+						sub.push_back('~');
+					}
+					else if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
+						sub.push_back(_input[i]);
+					else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
+					{
+						if (_input[i] != ')')
+						{
+							sub.push_back('*');
+							sub.push_back(_input[i]);
+						}
+						else
+						{
+							sub.push_back(_input[i]);
+						}
+					}
+					else {
 						sub.push_back(_input[i]);
 					}
+				}
+				else
+				{
+					if (_input[i] == '-')
+						sub.push_back('~');
 					else
 					{
 						sub.push_back(_input[i]);
 					}
-				}
-				else {
-					sub.push_back(_input[i]);
-				}
-			}
-			else
-			{
-				if (_input[i] == '-')
-					sub.push_back('~');
-				else
-				{
-					sub.push_back(_input[i]);
 				}
 			}
 
@@ -1085,6 +1087,7 @@ std::string Optimization::differentiation(std::string destination)
 	int top = -1;
 	for (int i = 0; i < postfix.size(); i++)
 	{
+		//std::cout <<i<<"多少"<< postfix[i] << std::endl;
 		if (isdigit(postfix[i][0]))//看每個vector第一個bit是否為數字
 		{
 			temofinterval.insert(std::pair<std::string, std::string>(postfix[i], "0"));
@@ -1106,25 +1109,31 @@ std::string Optimization::differentiation(std::string destination)
 		}
 		else if (postfix[i] == "~") //變成負號
 		{
-			std::string t = "";
+			std::string t = ""; \
+			std::string t2="-";
+			it = temofinterval.find(ans[top]);
+			t2 +=it->second;
 			t += "-";
 			t+=ans[top];
 			ans[top] = t;
+			temofinterval.insert(std::pair<std::string,std::string>(ans[top],t2));
 		}
 		else if (postfix[i] == "+"||postfix[i]=="-")
 		{
+			std::cout << "i" << i << postfix[i] << std::endl;
 			std::string key = "";
 			key += ans[top - 1];
-			key += "+";
+			key += postfix[i];
 			key += ans[top];
 			key += "";
 
-			std::string subarray = "";
+			std::string subarray = "(";
 			it = temofinterval.find(ans[top - 1]);
 			subarray += it->second;
-			subarray += "+";//連鎖綠前+後
+			subarray += postfix[i];//連鎖綠前+後
 			it = temofinterval.find(ans[top]);
 			subarray += it->second;
+			subarray += ")";
 			top--;
 			ans.pop_back();
 			ans[top] = key;
@@ -1325,10 +1334,83 @@ std::string Optimization::differentiation(std::string destination)
 
 void Optimization::insertInitialVariable(std::string _name, double _num)
 {
-	initial.insert(std::pair<std::string,double>(_name,_num));
+	
+	std::map<std::string, double>::iterator it;
+	it = initial.find(_name);
+	if (it == initial.end())
+	{
+		initial.insert(std::pair<std::string, double>(_name, _num));
+	}
+	else {
+		it->second = _num;
+	}
+}
+
+void Optimization::deleteinitial()
+{
+	initial.clear();
 }
 
 void Optimization::insertEveryVariableRestrict(std::string _name, restrictVariable _num)
 {
-	rrestrict.insert(std::pair<std::string, restrictVariable>(_name, _num));
+	
+
+
+	std::map<std::string, restrictVariable>::iterator it;
+	it = rrestrict.find(_name);
+	if (it == rrestrict.end())
+	{
+		rrestrict.insert(std::pair<std::string, restrictVariable>(_name, _num));
+	}
+	else {
+		it->second = _num;
+	}
+}
+
+double Optimization::CalculationLowerbound(std::string name, double x, double y)
+{
+	std::map<std::string, double>::iterator it;
+	it = initial.find(name);
+	return (it->second - x) / y;
+}
+
+double Optimization::CalculationUpperbound(std::string name, double x, double y)
+{
+
+	std::map<std::string, double>::iterator it;
+	it = initial.find(name);
+	return (it->second - x) / y;
+}
+
+void Optimization::clearVariableRestrict()
+{
+	variable.clear();
+}
+
+Matrix Optimization::Hessianmatrix()
+{
+	std::string *rowname=new std::string[this->getNDimension()];
+	std::string *columnname= new std::string[this->getNDimension()];
+	std::set<char>::iterator IT_SET=variable.begin();
+	for (int i = 0; i < this->getNDimension(); i++)
+	{
+		std::string n = "";
+		n+= *IT_SET;
+		rowname[i] = n;
+		columnname[i] = n;
+		IT_SET++;
+	}
+	Matrix ans("H",this->getNDimension(),this->getNDimension());
+	for (int i = 0; i < this->getNDimension(); i++)
+	{
+		for (int j = 0; j < this->getNDimension(); j++)
+		{
+			std::string firstd = this->differentiation(rowname[i]);
+			Optimization nextfx(firstd);
+			std::string secondd = nextfx.differentiation(columnname[j]);
+			Optimization finalfx(secondd);
+			ans.replaceNuminMatrix(i, j, finalfx.eval(this->initial));
+		}
+	}
+	return ans;
 }
