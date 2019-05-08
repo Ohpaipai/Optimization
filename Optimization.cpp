@@ -47,6 +47,7 @@ Optimization::Optimization(std::string _input)
 	input = _input;
 	std::string sub = this->dealstring(input);
 	orignal = sub;
+	
 	std::cout << orignal << std::endl;
 	postfix = this->toPostfix();
 
@@ -544,8 +545,12 @@ std::string Optimization::dealstring(std::string _input)
 		else {
 			if (sub.size() > 0)
 			{
-				if (sub[sub.size()-1]=='~') //變負號
+				if (sub[sub.size()-1]=='~'&&_input[i]=='-') //變負號
 					sub.push_back('~');
+				else if(_input[i] =='-'&&(this->priority(sub[sub.size() - 1]) == 1 || this->priority(sub[sub.size() - 1]) == 2))
+				{
+					sub.push_back('~');
+				}
 				else if (_input[i] == '^' || this->priority(_input[i]) == 1 || this->priority(_input[i]) == 2)
 					sub.push_back(_input[i]);
 				else if (sub[sub.size() - 1] == ')' || ((sub[sub.size() - 1] >= 65 && sub[sub.size() - 1] <= 90) || sub[sub.size() - 1] >= 97 && sub[sub.size() - 1] <= 122))
@@ -771,11 +776,12 @@ double Optimization::GoldenSearch(double lowerbound, double middle, double upper
 
 }
 
-void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double err,double count)
+void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double err,int count)
 {
 	count++;
 	std::map<std::string, double>newpush;
 	std::map<std::string, double>Firstvec = initial;
+	std::map<std::string, double>check;
 	std::map<std::string, double>::iterator it_vec;
 	std::map<std::string, double>::iterator it_intial;
 	std::map<std::string, restrictVariable>::iterator it_restrict;
@@ -827,8 +833,8 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 						newequ.insert(std::pair<std::string, std::string>(it_intial->first, make));
 
 						it_restrict = rrestrict.find(it_intial->first);
-						low = it_intial->second - it_restrict->second.upperbound;
-						high = it_intial->second - it_restrict->second.upperbound;
+						low = (it_intial->second - it_restrict->second.upperbound)/ it_vec->second;
+						high = (it_intial->second - it_restrict->second.lowerbound)/ it_vec->second;
 						if (low < lowerbound) lowerbound = low;
 						if (high > upperbound) upperbound = high;
 					}
@@ -844,7 +850,7 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 		double middle = (upperbound - lowerbound) * phi;
 		std::string ne = this->NewEquation(newequ);
 		Optimization newop(ne);
-		NgoldenAns[i] = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-8, 0);
+		NgoldenAns[i] = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-6, 0);
 		for (it_vec = nvec.front().begin(); it_vec != nvec.front().end(); it_vec++) //改變initial
 		{
 			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
@@ -868,12 +874,14 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 		}
 
 		FAns[i] = this->eval(initial);
-
+		check = initial;
 
 
 #pragma region cout
 		std::cout << "------------------------------------------------------------------------------------\n";
 		std::cout << "第" << count << "次之" << i << "\n";
+		std::cout << "GoldenSreach:" << NgoldenAns[i] << "\n";
+		std::cout << "上界:" << upperbound << " 下界:" << lowerbound << "\n";
 		std::cout << "Vector為\n{ ";
 		for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
 		{
@@ -915,8 +923,8 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 						newequ.insert(std::pair<std::string, std::string>(it_intial->first, make));
 						it_restrict = rrestrict.find(it_intial->first);
 						newpush.insert(std::pair<std::string,double>(it_intial->first,NgoldenAns[i]));//製作新的探查點
-						low = it_intial->second - it_restrict->second.upperbound;
-						high = it_intial->second - it_restrict->second.upperbound;
+						low = (it_intial->second - it_restrict->second.upperbound)/NgoldenAns[i];
+						high = (it_intial->second - it_restrict->second.lowerbound)/ NgoldenAns[i];
 						if (low < lowerbound) lowerbound = low;
 						if (high > upperbound) upperbound = high;
 				
@@ -926,7 +934,7 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 		double middle = (upperbound - lowerbound) * phi;
 		std::string ne = this->NewEquation(newequ);
 		Optimization newop(ne);
-		double FinalAns = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-8, 0);
+		double FinalAns = newop.GoldenSearch(lowerbound, middle, upperbound, 1e-6, 0);
 		
 		i = 0;
 		
@@ -954,6 +962,8 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 		#pragma region cout
 		std::cout << "------------------------------------------------------------------------------------\n";
 		std::cout << "第" << count << "次之" << this->getNDimension() << "\n";
+		std::cout << "GoldenSreach:" << NgoldenAns[i] << "\n";
+		std::cout << "上界:" << upperbound << " 下界:" << lowerbound << "\n";
 		std::cout << "Vector為\n{ ";
 		for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
 		{
@@ -966,28 +976,28 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 	#pragma endregion
 
 	#pragma region 檢查是否符合範圍
-		if (count > 20)
+		if (count > 60)
 		{
 		#pragma region cout
 		
 			std::cout << "------------------------------------------------------------------------------------\n";
 			std::cout << "Ans\n";
 			std::cout << "Vector為\n{ ";
-			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			for (it_intial = check.begin(); it_intial != check.end(); it_intial++)
 			{
 				std::cout << it_intial->second << "  ";
 			}
 			std::cout << "}\n";
-			std::cout << "F(x)=" << Finalfx << "\n";
+			std::cout << "F(x)=" <<FAns[this->getNDimension()-1] << "\n";
 			std::cout << "------------------------------------------------------------------------------------\n";
 #pragma endregion
 			return;
 		}
-		else if (std::abs((Finalfx - Finitial)) > err) {
+		else if (std::abs((FAns[this->getNDimension()-1] - Finitial)) > err) {
 
 			std::map<std::string, double>Tx;
 			double check2 = 0;
-			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			for (it_intial = check.begin(); it_intial != check.end(); it_intial++)
 			{
 				for (it_vec = Firstvec.begin(); it_vec != Firstvec.end(); it_vec++)
 				{
@@ -999,7 +1009,36 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 			}
 			if (check2 > err)
 			{
-				this->Powell(newvec,err,count);
+				
+				
+				if (count%this->getNDimension() == 0)
+				{
+					std::queue<std::map<std::string, double>>restart;
+					int g = 0;
+					for (int k = 0; k < this->getNDimension(); k++)
+					{
+						std::map<std::string, double> newr;
+						newr.clear();
+						int j = 0;
+						for (it_intial = check.begin(); it_intial != check.end(); it_intial++)
+						{
+							if (k == j) {
+								
+								newr.insert(std::pair<std::string, double>(it_intial->first, 1));
+								std::cout << it_intial->first << "  " << 1 << "\n";
+							}
+							else {
+								newr.insert(std::pair<std::string, double>(it_intial->first, 0));
+								std::cout << it_intial->first << "  " << 0 << "\n";
+							}
+							j++;
+						}
+						restart.push(newr);
+					}
+					this->Powell(restart, err, count);
+				}
+				else
+					this->Powell(newvec,err,count);
 			}
 			else {
 #pragma region cout
@@ -1007,12 +1046,12 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 				std::cout << "------------------------------------------------------------------------------------\n";
 				std::cout << "Ans\n";
 				std::cout << "Vector為\n{ ";
-				for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+				for (it_intial = check.begin(); it_intial != check.end(); it_intial++)
 				{
 					std::cout << it_intial->second << "  ";
 				}
 				std::cout << "}\n";
-				std::cout << "F(x)=" << Finalfx << "\n";
+				std::cout << "F(x)=" << FAns[this->getNDimension()-1] << "\n";
 				std::cout << "------------------------------------------------------------------------------------\n";
 #pragma endregion
 			}
@@ -1023,12 +1062,12 @@ void Optimization::Powell(std::queue<std::map<std::string, double>> nvec,double 
 			std::cout << "------------------------------------------------------------------------------------\n";
 			std::cout << "Ans\n";
 			std::cout << "Vector為\n{ ";
-			for (it_intial = initial.begin(); it_intial != initial.end(); it_intial++)
+			for (it_intial = check.begin(); it_intial != check.end(); it_intial++)
 			{
 				std::cout << it_intial->second << "  ";
 			}
 			std::cout << "}\n";
-			std::cout << "F(x)=" << Finalfx << "\n";
+			std::cout << "F(x)=" << FAns[this->getNDimension()-1] << "\n";
 			std::cout << "------------------------------------------------------------------------------------\n";
 #pragma endregion
 		}

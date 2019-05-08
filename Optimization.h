@@ -35,7 +35,7 @@ public:
 	std::string getinput();//輸入字串
 	std::string getorignal();//處理後字串
 	double GoldenSearch(double lowerbound,double middle,double upperbound,const double tau, double count);
-	void Powell(std::queue<std::map<std::string, double>> nvec, double err,double count);
+	void Powell(std::queue<std::map<std::string, double>> nvec, double err,int count);
 	std::string differentiation(std::string destination);
 	void insertInitialVariable(std::string,double);
 	void insertEveryVariableRestrict(std::string, restrictVariable);
