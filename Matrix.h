@@ -4,7 +4,7 @@
 
 
 
-typedef struct MyStruct
+typedef struct test2
 {
 	bool up;
 	std::string A;

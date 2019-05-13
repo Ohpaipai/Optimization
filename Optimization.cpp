@@ -31,6 +31,8 @@ Optimization::Optimization(const Optimization &a)
 	postfix = a.postfix;
 	stackSign = a.stackSign;
 	input = a.input;
+	initial = a.initial;
+	rrestrict = a.rrestrict;
 }
 
 Optimization::~Optimization()
@@ -47,9 +49,21 @@ Optimization::Optimization(std::string _input)
 	input = _input;
 	std::string sub = this->dealstring(input);
 	orignal = sub;
-	std::cout << orignal << std::endl;
+	//std::cout << orignal << std::endl;
 	postfix = this->toPostfix();
 
+}
+
+Optimization Optimization::operator=(const Optimization& a)
+{
+	orignal = a.orignal;
+	variable = a.variable;
+	postfix = a.postfix;
+	stackSign = a.stackSign;
+	input = a.input;
+	initial = a.initial;
+	rrestrict = a.rrestrict;
+	return *this;
 }
 
 std::vector<std::string> Optimization::toPostfix()
@@ -57,7 +71,7 @@ std::vector<std::string> Optimization::toPostfix()
 	std::string stack;
 	std::vector<std::string>tempostfix;
 	int top = -1;
-	for (int i = 0,j=0; i!=orignal.size(); i++)
+	for (int i = 0, j = 0; i != orignal.size(); i++)
 	{
 		/*std::cout << i << "--->";
 		for (int j = 0; j <=top; j++)
@@ -67,77 +81,82 @@ std::vector<std::string> Optimization::toPostfix()
 		std::cout << std::endl;*/
 		switch (orignal[i])
 		{
-			case '(':
-				stack.push_back(orignal[i]);
-				stackSign.push_back(orignal[i]);
-				top++;
-				break;
-			case '+': case '-': case '*': case '/':case '^':case'!':case'@':case'$':case '%':case '&':case '#':case('~'):
-				if (top > -1)
-				{
-					while ((priority(stack[top]) >=priority(orignal[i]))) {
-						std::string tem = "";
-						tem += stack[top];
-						stack.pop_back();
-						tempostfix.push_back(tem);
-						j++;
-						top--;
-						if (top <= -1) break;
-					}
-				}
-				stack.push_back(orignal[i]);
-				stackSign.push_back(orignal[i]);
-				top++;
-				break;
-			case ')':
-				if (top > -1)
-				{
-					while (stack[top] != '(') { // 遇 ) 輸出至 ( 
-						std::string tem = "";
-						tem += stack[top];
-						stack.pop_back();
-						tempostfix.push_back(tem);
-						j++;
-						top--;
-						if (top <= -1) break;
-					}
+		case '(':
+			stack.push_back(orignal[i]);
+			stackSign.push_back(orignal[i]);
+			top++;
+			break;
+		case '+': case '-': case '*': case '/':case '^':case'!':case'@':case'$':case '%':case '&':case '#':case('~'):
+			if (top > -1)
+			{
+				while ((priority(stack[top]) >= priority(orignal[i]))) {
+					std::string tem = "";
+					tem += stack[top];
 					stack.pop_back();
+					tempostfix.push_back(tem);
+					j++;
 					top--;
-					if (top <= -1) top = -1;
+					if (top <= -1) break;
 				}
-				stackSign.push_back(orignal[i]);
-				break;
-			case ' ':
+			}
+			stack.push_back(orignal[i]);
+			stackSign.push_back(orignal[i]);
+			top++;
+			break;
+		case ')':
+			if (top > -1)
+			{
+				while (stack[top] != '(') { // 遇 ) 輸出至 ( 
+					std::string tem = "";
+					tem += stack[top];
+					stack.pop_back();
+					tempostfix.push_back(tem);
+					j++;
+					top--;
+					if (top <= -1) break;
+				}
+				stack.pop_back();
+				top--;
+				if (top <= -1) top = -1;
+			}
+			stackSign.push_back(orignal[i]);
+			break;
+		case ' ':
+			break;
+		default:
+			std::string tem = "";
+			while (i != orignal.size())
+			{
+
+
+				if (isdigit(orignal[i]) || orignal[i] == '.' || ((orignal[i] >= 65 && orignal[i] <= 90) || orignal[i] >= 97 && orignal[i] <= 122))
+				{
+					tem += orignal[i];
+				}
+				else
 					break;
-			default:
-				std::string tem = "";
-				while (i!=orignal.size())
-				{
-					
-					
-					if (isdigit(orignal[i]) || orignal[i] == '.' || ((orignal[i] >= 65 && orignal[i] <= 90) || orignal[i] >= 97 && orignal[i] <= 122))
-					{
-						tem+= orignal[i];
-					}
-					else
-						break;
-					i++;
-					
-				}
-				if (tem.size() == 1 && ((tem[0] >= 65 && tem[0] <= 90) || tem[0] >= 97 && tem[0] <= 122)) //表示為variable
-				{
-					
-					variable.insert(tem[0]);
-				}
-				tempostfix.push_back(tem);
-				j++;
-				i--;
-				break;
+				i++;
+
+			}
+			if (tem.size() == 1 && ((tem[0] >= 65 && tem[0] <= 90) || tem[0] >= 97 && tem[0] <= 122)) //表示為variable
+			{
+				variable.insert(tem[0]);
+				initial.insert(std::pair<std::string, double>(tem, 0));
+				restrictVariable a;
+				a.lowerbound = 0;
+				a.upperbound = 0;
+				rrestrict.insert(std::pair<std::string, restrictVariable>(tem, a));
+
+				/*rrestrict[tem]=a;
+				initial[tem] = 0;*/
+			}
+			tempostfix.push_back(tem);
+			j++;
+			i--;
+			break;
 		}
 	}
-
-
-	while (top>-1)
+	while (top > -1)
 	{
 		std::string tem = "";
 		tem += stack[top];
@@ -145,16 +164,7 @@ std::vector<std::string> Optimization::toPostfix()
 		tempostfix.push_back(tem);
 		top--;
 	}
-
-
-
-
-
-
-
-
 	return tempostfix;
-	
 }
 
 void Optimization::getPostfix()
@@ -767,6 +777,7 @@ double Optimization::GoldenSearch(double lowerbound, double middle, double upper
 	v +=a;
 	fx.insert(std::pair<std::string, double>(v, x));
 	fb.insert(std::pair<std::string, double>(v, middle));
+	
 	if (this->eval(fx) < this->eval(fb)) {
 		if (upperbound - middle > middle - lowerbound) return this->GoldenSearch(middle, x, upperbound, tau,count);
 		else return this->GoldenSearch(lowerbound, x, middle, tau,count);
@@ -1332,17 +1343,206 @@ std::string Optimization::differentiation(std::string destination)
 	return temofinterval[ans[top]];
 }
 
-void Optimization::insertInitialVariable(std::string _name, double _num)
-{
+VectorSpace Optimization::gradient() {
+	VectorSpace gradient_value(this->getNDimension());
+	int index = 0;
+	for (std::set<char>::iterator it = variable.begin(); it != variable.end(); it++) {
+		std::string var = "";
+		var += *it;
+		Optimization partial_equation(this->differentiation(var));
+		gradient_value.changeNumInSpace(partial_equation.eval(this->initial), index++);
+	}
+	return gradient_value;
+}
+
+std::vector<std::string> Optimization::steepDescent() {
+
+	int count = 0; 
+	std::map<std::string, std::string> many_to_one;
+	VectorSpace current_point_gradient;
+	VectorSpace current_point(this->getNDimension());
+	double initial_point_gradient_norm;
+	while (true) {
+		std::cout << "count = " << count << std::endl;
+		int i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			current_point.changeNumInSpace(it->second, i++);
+		double current_point_norm = current_point.Norm();
+		double negative = -1.0;
+		current_point_gradient = this->gradient() * negative;
+		if (count == 0) {
+			initial_point_gradient_norm = current_point_gradient.Norm();
+		}
+		else if (current_point_gradient.Norm() < 1e-6 * initial_point_gradient_norm)
+				break;
+		restrictVariable alpha_bound;
+		CalculationBound(alpha_bound, current_point_gradient);
+		if (alpha_bound.lowerbound < 0.0)
+			alpha_bound.lowerbound = 0.0;
+		i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++) {
+			std::string cp_str = std::to_string(current_point.getNumInSpace(i));
+			std::string h_str = std::to_string(current_point_gradient.getNumInSpace(i));
+			if (current_point_gradient.getNumInSpace(i) >= 0.0)
+				many_to_one[it->first] = cp_str + "+" + h_str + "*a";
+			else
+				many_to_one[it->first] = cp_str + h_str + "*a";
+			i++;
+		}
+		Optimization one_dimension_func(NewEquation(many_to_one));
+		double alpha = one_dimension_func.GoldenSearch(alpha_bound.lowerbound, 
+			(alpha_bound.upperbound - alpha_bound.lowerbound)*0.5, 
+			alpha_bound.upperbound, 1e-6, 0);
+		std::cout << "alpha: " << alpha << std::endl;
+		VectorSpace next_point(current_point + current_point_gradient * alpha);
+		std::cout << "next point: " << next_point;
+		i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			it->second = next_point.getNumInSpace(i++);
+		if (count == 50)
+			break;
+		if ((next_point - current_point).Norm() < 1e-6 * current_point_norm)
+			break;
+		count++;
+		
+	}
+	std::cout << "min : " << eval(initial) << std::endl;
+	return std::vector<std::string>();
+}
+
+std::vector<std::string> Optimization::newton() {
+	int count = 0;
+	VectorSpace current_point_gradient;
+	VectorSpace current_point(this->getNDimension());
+	double initial_point_gradient_norm;
+	while (true) {
+		VectorSpace next_point(this->getNDimension());
+		Matrix hessian(this->Hessianmatrix());
+		int i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			current_point.changeNumInSpace(it->second, i++);
+		current_point_gradient = this->gradient();
+		double current_point_norm = current_point.Norm();
+		Matrix hessian_inv = hessian.Inverse();
+		Matrix next = current_point - hessian_inv * current_point_gradient;
+		for (int i = 0; i < next.getRow(); i++)
+			for (int j = 0; j < next.getcolumn(); j++)
+				next_point.changeNumInSpace(next.getnuminMatrix(i, j), i*next.getcolumn() + j);
+		std::cout << " Hessain : " << hessian << std::endl;
+		std::cout << " Hessain inverse : " << hessian_inv << std::endl;
+		std::cout << "x : " << next_point << std::endl;
+		i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			it->second = next_point.getNumInSpace(i++);
+		if (count == 0) {
+			initial_point_gradient_norm = current_point_norm;
+		}
+		else if (current_point_gradient.Norm() < 1e-6 * initial_point_gradient_norm)
+			break;
+		if ((next_point - current_point).Norm() < 1e-6 * current_point_norm)
+			break;
+		count++;
+		if (count == 10)
+			break;
+	}
+	std::cout << "min : " << eval(initial) << std::endl;
+	return std::vector<std::string>();
+}
+
+std::vector<std::string> Optimization::conjugateGradient() {
 	
+	int count = 0;
+	std::map<std::string, std::string> many_to_one;
+	VectorSpace current_point_gradient;
+	VectorSpace previous_point_gradient;
+	VectorSpace previous_s;
+	VectorSpace current_point(this->getNDimension());
+	double previous_value;
+	while (true) {
+		VectorSpace next_point(this->getNDimension());
+		double negative = -1.0;
+		int i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			current_point.changeNumInSpace(it->second, i++);
+		current_point_gradient = this->gradient();
+		VectorSpace current_s(this->getNDimension());
+		if (count == 0) {
+			current_s = current_point_gradient * negative;
+		}
+		else {
+			double beta = current_point_gradient * current_point_gradient / (previous_point_gradient * previous_point_gradient);
+			
+			std::cout << "beta : " << beta << std::endl;
+			current_s = current_point_gradient  * negative + previous_s * beta;
+		}
+		std::cout << "s : " << current_s;
+		restrictVariable alpha_bound;
+		CalculationBound(alpha_bound, current_s);
+		if (alpha_bound.lowerbound < 0.0)
+			alpha_bound.lowerbound = 0.0;
+		i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++) {
+			std::string cp_str = std::to_string(current_point.getNumInSpace(i));
+			std::string s_str = std::to_string(current_s.getNumInSpace(i));
+			if (current_s.getNumInSpace(i) >= 0.0)
+				many_to_one[it->first] = cp_str + "+" + s_str + "*a";
+			else
+				many_to_one[it->first] = cp_str + s_str + "*a";
+			i++;
+		}
+		Optimization one_dimension_func(NewEquation(many_to_one));
+		double interval[5];
+		double interval_length = (alpha_bound.upperbound - alpha_bound.lowerbound) / 5.0;
+		for (int i = 0; i < 4; i++) {
+			interval[i] = alpha_bound.lowerbound + interval_length * i;
+		}
+		interval[4] = alpha_bound.upperbound;
+		double alpha = 10000000000;
+		for (int i = 0; i < 4; i++) {
+
+			double temp = one_dimension_func.GoldenSearch(interval[i],
+				(interval[i + 1] - interval[i]) * 0.5,
+				interval[i + 1], 1e-6, 0);
+			if (temp < alpha)
+				alpha = temp;
+		}
+		std::cout << "alpha : " << alpha << std::endl;
+		next_point = current_point + current_s * alpha;
+		std::cout << "x : " << next_point;
+		previous_point_gradient = current_point_gradient;
+		previous_s = current_s;
+		i = 0;
+		for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+			it->second = next_point.getNumInSpace(i++);
+		double current_value = this->eval(initial);
+		if (count != 0) {
+			if (abs(current_value - previous_value) < 1e-6)
+				break;
+			VectorSpace delta = next_point - current_point;
+			if (delta * delta < 1e-6)
+				break;
+			VectorSpace next_point_gradient = this->gradient();
+			if (next_point_gradient * next_point_gradient < 1e-6)
+				break;
+		}
+		previous_value = current_value;
+		if (count == 50)
+			break;
+		count++;
+	}
+	return std::vector<std::string>();
+}
+bool Optimization::insertInitialVariable(std::string _name, double _num)
+{
 	std::map<std::string, double>::iterator it;
 	it = initial.find(_name);
 	if (it == initial.end())
 	{
-		initial.insert(std::pair<std::string, double>(_name, _num));
+		return false;
 	}
 	else {
 		it->second = _num;
+		return true;
 	}
 }
 
@@ -1350,23 +1550,6 @@ void Optimization::deleteinitial()
 {
 	initial.clear();
 }
-
-void Optimization::insertEveryVariableRestrict(std::string _name, restrictVariable _num)
-{
-	
-
-
-	std::map<std::string, restrictVariable>::iterator it;
-	it = rrestrict.find(_name);
-	if (it == rrestrict.end())
-	{
-		rrestrict.insert(std::pair<std::string, restrictVariable>(_name, _num));
-	}
-	else {
-		it->second = _num;
-	}
-}
-
 double Optimization::CalculationLowerbound(std::string name, double x, double y)
 {
 	std::map<std::string, double>::iterator it;
@@ -1381,6 +1564,265 @@ double Optimization::CalculationUpperbound(std::string name, double x, double y)
 	it = initial.find(name);
 	return (it->second - x) / y;
 }
+bool Optimization::insertEveryVariableRestrict(std::string _name, restrictVariable _num)
+{
+	std::map<std::string, restrictVariable>::iterator it;
+	it = rrestrict.find(_name);
+	if (it == rrestrict.end())
+	{
+		return false;
+	}
+	else {
+		it->second = _num;
+		return true;
+	}
+}
+
+void Optimization::CalculationBound(restrictVariable &alpha_bound,VectorSpace h) {
+	
+	alpha_bound.lowerbound = -1e-100;
+	alpha_bound.upperbound = 1e100;
+	VectorSpace initial_point(this->getNDimension());
+	int i = 0;
+	for (std::map<std::string, double>::iterator it = initial.begin(); it != initial.end(); it++)
+		initial_point.changeNumInSpace(it->second, i++);
+	i = 0;
+	for (std::map<std::string, restrictVariable>::iterator it = rrestrict.begin(); it != rrestrict.end(); it++) {
+		
+		double h_value = h.getNumInSpace(i);
+		if (h_value == 0.0)
+			continue;
+		else if (h_value > 0.0) {
+			double low, high;
+			low = (it->second.lowerbound - initial_point.getNumInSpace(i)) / h.getNumInSpace(i);
+			if (low > alpha_bound.lowerbound)
+				alpha_bound.lowerbound = low;
+			high = (it->second.upperbound - initial_point.getNumInSpace(i)) / h.getNumInSpace(i);
+			if (high < alpha_bound.upperbound)
+				alpha_bound.upperbound = high;
+		}
+		else {
+			double low, high;
+			high = (it->second.lowerbound - initial_point.getNumInSpace(i)) / h.getNumInSpace(i);
+			if (high < alpha_bound.upperbound)
+				alpha_bound.upperbound = high;
+			low = (it->second.upperbound - initial_point.getNumInSpace(i)) / h.getNumInSpace(i);
+			if (low > alpha_bound.lowerbound)
+				alpha_bound.lowerbound = low;
+		}
+		i++;
+	}
+	
+}
+
+void Optimization::Quasi_Newton()
+{
+	std::map<std::string, restrictVariable>::iterator itr;
+	std::map<std::string, double>::iterator iti;
+	std::set<char>::iterator itv;
+	Matrix F("F", this->getNDimension(), this->getNDimension());
+	Matrix G("d", this->getNDimension(), 1);
+	Matrix Ans("Ans", this->getNDimension(), 1);
+	Matrix Next;
+	itv = variable.begin();
+	iti = initial.begin();
+	for (int i = 0; i < this->getNDimension(); i++)
+	{
+		F.replaceNuminMatrix(i, i, 1);
+		std::string diffv = "";
+		diffv += *itv;
+		Ans.replaceNuminMatrix(i, 1, iti->second);
+		Optimization diff(this->differentiation(diffv));
+		G.replaceNuminMatrix(i, 1, diff.eval(initial));
+		itv++;
+		iti++;
+
+	} //單位矩陣
+	Matrix D;
+	Next = Ans;
+	D = (F * (-1)) * G;
+	int k = 0;
+	std::map<std::string, std::string>neweq;
+	neweq.clear();
+	std::string t = "";
+	restrictVariable r;//對golden所探索的限制
+	for (iti = initial.begin(); iti != initial.end(); iti++)
+	{
+		t.clear();
+		std::stringstream ss;
+		std::string e = "";
+		ss << Ans.getnuminMatrix(k, 1);
+		ss >> t;
+		e += t;
+		e += "+x";
+		ss.clear();
+		ss.str("");
+		ss << G.getnuminMatrix(k, 1);
+		ss >> t;
+		e += t;
+		neweq.insert(std::pair<std::string, std::string>(iti->first, e));
+		itr = rrestrict.find(iti->first);
+		double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 1)); //找出golden探索限制
+		double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 1));
+		if (k == 0)
+		{
+			r.lowerbound = low;
+			r.upperbound = up;
+		}
+		else {
+			if (r.lowerbound > low) r.lowerbound = low;
+			if (r.upperbound < up)r.upperbound = up;
+		}
+		k++;
+	}
+
+	Optimization newequ1(this->NewEquation(neweq));
+	restrictVariable iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
+	if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
+	if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
+	newequ1.insertEveryVariableRestrict("x", iif);
+	double golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
+	Next = Next + D * golden;
+	k = 0;
+	for (iti = initial.begin(); iti != initial.end(); iti++)
+	{
+		iti->second = Next.getnuminMatrix(k, 1);
+	}
+	//輸出
+	std::cout << "第" << k << "次探索:\n";
+	std::cout << "Golden==>" << golden << "\n";
+	std::cout << "H==>" << F << "\n";
+	std::cout << "點為" << Next << "\n";
+	//
+	Matrix stepplus = D * golden; //尋找下個F ALPHAk
+	itv = variable.begin();
+	Matrix tg = G;
+	for (int i = 0; i < this->getNDimension(); i++)
+	{
+		std::string diffv = "";
+		diffv += *itv;
+		Optimization diff(this->differentiation(diffv));
+		tg.replaceNuminMatrix(i, 1, diff.eval(initial));
+		itv++;
+	}//x^(k+1)
+
+	Matrix m = stepplus.Transpose() * tg;
+	Matrix m1 = F * tg;
+	Matrix m2 = tg.Transpose() * F * tg;
+	F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0) - (m1 * m1.Transpose()) / m2.getnuminMatrix(0, 0);
+
+
+
+
+
+
+
+	const double err = 1e-6;
+	const int strict = 60;
+	int count = 1;
+
+	Matrix coutf;
+	while (count < 60)
+	{
+		itv = variable.begin();
+		iti = initial.begin();
+		bool isb = true;
+		for (int i = 0; i < this->getNDimension(); i++)
+		{
+
+			std::string diffv = "";
+			diffv += *itv;
+			Optimization diff(this->differentiation(diffv));
+			if (diff.eval(initial) > err)
+			{
+				isb = false;
+			}
+			G.replaceNuminMatrix(i, 1, diff.eval(initial));
+			itv++;
+			iti++;
+
+		}
+		if (true)
+			break;
+		else {
+
+			for (iti = initial.begin(); iti != initial.end(); iti++)
+			{
+				t.clear();
+				std::stringstream ss;
+				std::string e = "";
+				ss << Ans.getnuminMatrix(k, 1);
+				ss >> t;
+				e += t;
+				e += "+x";
+				ss.clear();
+				ss.str("");
+				ss << G.getnuminMatrix(k, 1);
+				ss >> t;
+				e += t;
+				neweq.insert(std::pair<std::string, std::string>(iti->first, e));
+				itr = rrestrict.find(iti->first);
+				double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 1)); //找出golden探索限制
+				double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 1));
+				if (k == 0)
+				{
+					r.lowerbound = low;
+					r.upperbound = up;
+				}
+				else {
+					if (r.lowerbound > low) r.lowerbound = low;
+					if (r.upperbound < up)r.upperbound = up;
+				}
+				k++;
+			}
+
+			Optimization newequ1(this->NewEquation(neweq));
+			iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
+			if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
+			if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
+			newequ1.insertEveryVariableRestrict("x", iif);
+			golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
+			Next = Next + D * golden;
+			k = 0;
+			for (iti = initial.begin(); iti != initial.end(); iti++)
+			{
+				iti->second = Next.getnuminMatrix(k, 1);
+			}
+
+			coutf = F;
+
+			//輸出
+			std::cout << "第" << k << "次探索:\n";
+			std::cout << "Golden==>" << golden << "\n";
+			std::cout << "H==>" << F << "\n";
+			std::cout << "點為" << Next << "\n";
+			//
+			stepplus = D * golden; //尋找下個F ALPHAk
+			itv = variable.begin();
+			tg = G;
+			for (int i = 0; i < this->getNDimension(); i++)
+			{
+				std::string diffv = "";
+				diffv += *itv;
+				Optimization diff(this->differentiation(diffv));
+				tg.replaceNuminMatrix(i, 1, diff.eval(initial));
+				itv++;
+			}//x^(k+1)
+
+			m = stepplus.Transpose() * tg;
+			m1 = F * tg;
+			m2 = tg.Transpose() * F * tg;
+			F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0) - (m1 * m1.Transpose()) / m2.getnuminMatrix(0, 0);
+		}
+		count++;
+	}
+	std::cout << "Ans為\n";
+	std::cout << "H==>" << coutf << "\n";
+	std::cout << "點為" << Next << "\n";
+
+}
+
+
 
 void Optimization::clearVariableRestrict()
 {
@@ -1412,5 +1854,254 @@ Matrix Optimization::Hessianmatrix()
 			ans.replaceNuminMatrix(i, j, finalfx.eval(this->initial));
 		}
 	}
+	return ans;
+}
+restrictVariable Optimization::checkvanszerofive(std::string input)
+{
+	restrictVariable ans;
+	ans.lowerbound = 2.22507e-308;
+	ans.upperbound = 1.79769e+308;
+	std::vector<std::string> findrootfive;
+	int brackets = 0;
+	for (int i = 0; i < input.size(); i++)
+	{
+		if (input[i] == '^')
+		{
+			std::string record = "";
+			std::string a = "";
+
+			int c = i;
+			for (int j = i + 1; j < input.size(); j++)
+			{
+				c++;
+				if (std::isdigit(input[j]) || input[j] == '.' || input[j] == '~')
+				{
+					a += input[j];
+				}
+				else break;
+			}
+			std::stringstream ss;
+			ss << a;
+			double ispointFive;
+			ss >> ispointFive;
+			bool havevariable = false;
+			if (std::abs(ispointFive) < 1 && std::abs(ispointFive) != 0) //為開根號
+			{
+				/*std::reverse(a.begin(), a.end());
+				record += a;
+				record += '^';*/
+
+				for (int j = i - 1; j >= 0; j--)
+				{
+					if (input[j] == ')')
+					{
+						brackets++;
+					}
+					else if (input[j] == '(')
+					{
+						brackets--;
+					}
+
+					if (((priority(input[i]) == 1 || priority(input[i]) == 2 || priority(input[i]) == 3) && brackets == 0) || brackets == 0)
+					{
+						if ((priority(input[i]) == 1 || priority(input[i]) == 2 || priority(input[i]) == 3))
+						{
+						}
+						else record += input[j];
+						break;
+					}
+					else
+					{
+						if ((input[j] >= 65 && input[j] <= 90) || input[j] >= 97 && input[j] <= 122)
+						{
+							havevariable = true;
+						}
+						record += input[j];
+					}
+
+				}
+				std::reverse(record.begin(), record.end());
+				i += 2;
+
+				findrootfive.push_back(record);
+
+
+
+
+
+				if (havevariable)
+				{
+					double comebine = 0;
+					char next = '+';
+					double variablecoef = 0;
+					std::string text = "";
+					int b = 0;
+					bool upv = false;
+
+
+					for (int j = 0; j < record.size(); j++)
+					{
+
+						if (std::isdigit(record[j]) || record[j] == '.')
+						{
+							text += record[j];
+						}
+						else if (priority(record[j]) == 1)
+						{
+							if (text == "")
+							{
+								next = record[j];
+
+							}
+							else if (upv) {
+								std::stringstream ss;
+								double templ;
+								ss << text;
+								ss >> templ;
+								if (next == '+')
+									variablecoef -= templ;
+								else
+									variablecoef += templ;
+								text.clear();
+								text = "";
+
+							}
+							else {
+								std::stringstream ss;
+								double templ;
+								ss << text;
+								ss >> templ;
+								if (next == '+') comebine += templ;
+								else comebine -= templ;
+								next = record[j];
+								text.clear();
+								text = "";
+								upv = false;
+							}
+
+						}
+						else if (priority(record[j]) == '*' && ((record[j + 1] >= 65 && record[j + 1] <= 90) || record[j + 1] >= 97 && record[j + 1] <= 122))
+						{
+							upv = false;
+							std::stringstream ss;
+							double templ;
+							ss << text;
+							ss >> templ;
+							text.clear();
+							text = "";
+							/*for (int k = j+2; k <record.size() ; k++)
+							{
+								if (k + 1 == record.size())
+								{
+
+								}
+								else {
+
+
+									if (priority(record[j]) == 1)
+									{
+										j = k - 1;
+
+										break;
+									}
+									else {
+										if (record[j] == '*')
+										{
+											if (text != "") {
+												double r;
+												ss.clear();
+												ss << text;
+												ss >> r;
+												templ *= r;
+												text = "";
+											}
+										}
+										else if (record[j] == '^')
+										{
+											for (int l = k + 1; l < record.size(); l++)
+											{
+												if (priority(record[j]) == 1)
+												{
+													k = l - 1;
+													break;
+												}
+
+											}
+										}
+										else {
+											text += record[k];
+										}
+									}
+								}
+							}*/
+							if (next == '+')
+								variablecoef -= templ;
+							else
+								variablecoef += templ;
+							j++;
+						}
+						else if ((record[j] >= 65 && record[j] <= 90) || (record[j] >= 97 && record[j] <= 122))
+						{
+							upv = true;
+						}
+					}
+					if (text != "") {
+						if (upv) {
+							std::stringstream ss;
+							double templ;
+							ss << text;
+							ss >> templ;
+							if (next == '+')
+								variablecoef -= templ;
+							else
+								variablecoef += templ;
+							text.clear();
+							text = "";
+
+						}
+						else {
+							std::stringstream ss;
+							double templ;
+							ss << text;
+							ss >> templ;
+							if (next == '+') comebine += templ;
+							else comebine -= templ;
+
+							text.clear();
+							text = "";
+							upv = false;
+						}
+					}
+
+
+					std::cout << "係數" << variablecoef << std::endl;
+					std::cout << "常數" << comebine << std::endl;
+					double push = comebine / variablecoef;
+					if (variablecoef < 0)
+					{
+						if (ans.upperbound > push)
+						{
+							ans.upperbound = push;
+						}
+					}
+					else {
+						if (ans.lowerbound < push)
+						{
+							ans.lowerbound = push;
+						}
+					}
+				}
+
+			}
+		}
+	}
+	for (int i = 0; i < findrootfive.size(); i++)
+	{
+		std::cout << "測試抓取" << findrootfive[i] << std::endl;
+	}
+
+
+	std::cout << "測試抓取lll" << ans.lowerbound << std::endl;
+	std::cout << "測試抓uuu" << ans.upperbound << std::endl;
 	return ans;
 }
