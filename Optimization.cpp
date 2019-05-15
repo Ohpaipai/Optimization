@@ -1618,152 +1618,78 @@ void Optimization::CalculationBound(restrictVariable &alpha_bound,VectorSpace h)
 void Optimization::Quasi_Newton()
 {
 	std::map<std::string, restrictVariable>::iterator itr;
+
+
 	std::map<std::string, double>::iterator iti;
 	std::set<char>::iterator itv;
-	Matrix F("F", this->getNDimension(), this->getNDimension());
-	Matrix G("d", this->getNDimension(), 1);
-	Matrix Ans("Ans", this->getNDimension(), 1);
-	Matrix Next;
-	itv = variable.begin();
 	iti = initial.begin();
 	for (int i = 0; i < this->getNDimension(); i++)
 	{
-		F.replaceNuminMatrix(i, i, 1);
-		std::string diffv = "";
-		diffv += *itv;
-		Ans.replaceNuminMatrix(i, 1, iti->second);
-		Optimization diff(this->differentiation(diffv));
-		G.replaceNuminMatrix(i, 1, diff.eval(initial));
-		itv++;
-		iti++;
-
-	} //單位矩陣
-	Matrix D;
-	Next = Ans;
-	D = (F * (-1)) * G;
-	int k = 0;
-	std::map<std::string, std::string>neweq;
-	neweq.clear();
-	std::string t = "";
-	restrictVariable r;//對golden所探索的限制
-	for (iti = initial.begin(); iti != initial.end(); iti++)
-	{
-		t.clear();
-		std::stringstream ss;
-		std::string e = "";
-		ss << Ans.getnuminMatrix(k, 1);
-		ss >> t;
-		e += t;
-		e += "+x";
-		ss.clear();
-		ss.str("");
-		ss << G.getnuminMatrix(k, 1);
-		ss >> t;
-		e += t;
-		neweq.insert(std::pair<std::string, std::string>(iti->first, e));
-		itr = rrestrict.find(iti->first);
-		double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 1)); //找出golden探索限制
-		double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 1));
-		if (k == 0)
-		{
-			r.lowerbound = low;
-			r.upperbound = up;
-		}
-		else {
-			if (r.lowerbound > low) r.lowerbound = low;
-			if (r.upperbound < up)r.upperbound = up;
-		}
-		k++;
+		std::cout << iti->first << " " << iti->second << std::endl;
 	}
-
-	Optimization newequ1(this->NewEquation(neweq));
-	restrictVariable iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
-	if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
-	if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
-	newequ1.insertEveryVariableRestrict("x", iif);
-	double golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
-	Next = Next + D * golden;
-	k = 0;
-	for (iti = initial.begin(); iti != initial.end(); iti++)
-	{
-		iti->second = Next.getnuminMatrix(k, 1);
-	}
-	//輸出
-	std::cout << "第" << k << "次探索:\n";
-	std::cout << "Golden==>" << golden << "\n";
-	std::cout << "H==>" << F << "\n";
-	std::cout << "點為" << Next << "\n";
-	//
-	Matrix stepplus = D * golden; //尋找下個F ALPHAk
-	itv = variable.begin();
-	Matrix tg = G;
+	Matrix F("F", this->getNDimension(), this->getNDimension());
+	Matrix G("d", this->getNDimension(), 1);
+	Matrix Ans("Ans", this->getNDimension(), 1);
+	iti = initial.begin();
 	for (int i = 0; i < this->getNDimension(); i++)
 	{
-		std::string diffv = "";
-		diffv += *itv;
-		Optimization diff(this->differentiation(diffv));
-		tg.replaceNuminMatrix(i, 1, diff.eval(initial));
-		itv++;
-	}//x^(k+1)
-
-	Matrix m = stepplus.Transpose() * tg;
-	Matrix m1 = F * tg;
-	Matrix m2 = tg.Transpose() * F * tg;
-	F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0) - (m1 * m1.Transpose()) / m2.getnuminMatrix(0, 0);
-
-
-
-
-
-
-
-	const double err = 1e-6;
-	const int strict = 60;
-	int count = 1;
-
-	Matrix coutf;
-	while (count < 60)
+		F.replaceNuminMatrix(i, i, 1);//作單位矩陣
+		G.replaceNuminMatrix(i, 0, iti->second);
+		iti++;
+	}
+	Ans = G;
+	int count = 0;
+	double golden = 0;
+	while (1)
 	{
-		itv = variable.begin();
+		Matrix difffirst("diff", this->getNDimension(), 1);
 		iti = initial.begin();
-		bool isb = true;
+		bool isbreak = true;
 		for (int i = 0; i < this->getNDimension(); i++)
 		{
-
-			std::string diffv = "";
-			diffv += *itv;
-			Optimization diff(this->differentiation(diffv));
-			if (diff.eval(initial) > err)
-			{
-				isb = false;
+			Optimization tem(this->differentiation(iti->first));
+			double temnum = tem.eval(initial);
+			difffirst.replaceNuminMatrix(i, 0, temnum);
+			if (temnum > 1e-6) {
+				isbreak = false;
 			}
-			G.replaceNuminMatrix(i, 1, diff.eval(initial));
-			itv++;
-			iti++;
-
 		}
-		if (true)
+		if (isbreak || count >= 60) {
+			std::cout << "Ans:\n";
+			std::cout << "H==>\n" << F << "\n";
+			std::cout << "點為\n" << G << "\n";
 			break;
+		}
 		else {
+			std::cout << "第" << count << "次探索:\n";
+			std::cout << "Golden==>" << golden << "\n";
+			std::cout << "H==>\n" << F << "\n";
+			std::cout << "點為\n" << G << "\n";
+			Matrix d = F * difffirst;
+			d = d * (-1);// d(k) = －Fk g(k)
 
+			std::string t;
+			int k = 0;
+			std::map<std::string, std::string>neweq;
+			restrictVariable r;
 			for (iti = initial.begin(); iti != initial.end(); iti++)
 			{
 				t.clear();
 				std::stringstream ss;
 				std::string e = "";
-				ss << Ans.getnuminMatrix(k, 1);
+				ss << Ans.getnuminMatrix(k, 0);
 				ss >> t;
 				e += t;
 				e += "+x";
 				ss.clear();
 				ss.str("");
-				ss << G.getnuminMatrix(k, 1);
+				ss << G.getnuminMatrix(k, 0);
 				ss >> t;
 				e += t;
 				neweq.insert(std::pair<std::string, std::string>(iti->first, e));
 				itr = rrestrict.find(iti->first);
-				double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 1)); //找出golden探索限制
-				double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 1));
+				double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 0)); //找出golden探索限制
+				double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 0));
 				if (k == 0)
 				{
 					r.lowerbound = low;
@@ -1775,50 +1701,240 @@ void Optimization::Quasi_Newton()
 				}
 				k++;
 			}
-
 			Optimization newequ1(this->NewEquation(neweq));
-			iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
+			restrictVariable iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
 			if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
 			if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
 			newequ1.insertEveryVariableRestrict("x", iif);
 			golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
-			Next = Next + D * golden;
-			k = 0;
-			for (iti = initial.begin(); iti != initial.end(); iti++)
-			{
-				iti->second = Next.getnuminMatrix(k, 1);
-			}
-
-			coutf = F;
-
-			//輸出
-			std::cout << "第" << k << "次探索:\n";
-			std::cout << "Golden==>" << golden << "\n";
-			std::cout << "H==>" << F << "\n";
-			std::cout << "點為" << Next << "\n";
-			//
-			stepplus = D * golden; //尋找下個F ALPHAk
-			itv = variable.begin();
-			tg = G;
+			Matrix g = G;
+			Matrix alphadiffg("al", this->getNDimension(), 1);
+			iti = initial.begin();
 			for (int i = 0; i < this->getNDimension(); i++)
 			{
-				std::string diffv = "";
-				diffv += *itv;
-				Optimization diff(this->differentiation(diffv));
-				tg.replaceNuminMatrix(i, 1, diff.eval(initial));
-				itv++;
-			}//x^(k+1)
+				iti->second += difffirst.getnuminMatrix(i, 0) * golden;
+				G.replaceNuminMatrix(i, 0, iti->second);
+				iti++;
+			} //作何啟argmin
+			iti = initial.begin();
+			for (int i = 0; i < this->getNDimension(); i++)
+			{
+				Optimization tem(this->differentiation(iti->first));
+				double temnum = tem.eval(initial);
+				alphadiffg.replaceNuminMatrix(i, 0, (temnum - difffirst.getnuminMatrix(i, 0)));
+				iti++;
+			}
+			Matrix alphax = d * (golden);
+			Matrix onemother = alphax.Transpose() * alphadiffg;
+			Matrix twomother = alphadiffg.Transpose() * F * alphadiffg;
+			Matrix twochild = F * alphadiffg;
+			F = F + (alphax * alphax.Transpose()) / onemother.getnuminMatrix(0, 0) - ((F * alphadiffg) * twochild.Transpose()) / twomother.getnuminMatrix(0, 0);
 
-			m = stepplus.Transpose() * tg;
-			m1 = F * tg;
-			m2 = tg.Transpose() * F * tg;
-			F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0) - (m1 * m1.Transpose()) / m2.getnuminMatrix(0, 0);
 		}
 		count++;
 	}
-	std::cout << "Ans為\n";
-	std::cout << "H==>" << coutf << "\n";
-	std::cout << "點為" << Next << "\n";
+
+
+
+
+
+	//Matrix Next;
+	//itv = variable.begin();
+	//iti = initial.begin();
+	//for (int i = 0; i <this->getNDimension(); i++)
+	//{
+	//	F.replaceNuminMatrix(i, i, 1);
+	//	std::string diffv="";
+	//	diffv+= *itv;
+	//	Ans.replaceNuminMatrix(i, 0, iti->second);
+	//	Optimization diff(this->differentiation(diffv));
+	//	G.replaceNuminMatrix(i, 0, diff.eval(initial));
+	//	itv++;
+	//	iti++;
+	//	
+	//} 
+	////單位矩陣
+	//Matrix D;
+	//Next = Ans;
+	//D = (F * (-1))*G;
+	//int k = 0;
+	//std::map<std::string, std::string>neweq;
+	//neweq.clear();
+	//std::string t = "";
+	//restrictVariable r;//對golden所探索的限制
+	//for (iti = initial.begin();iti!=initial.end();iti++)
+	//{
+	//	t.clear();
+	//	std::stringstream ss;
+	//	std::string e = "";
+	//	ss << Ans.getnuminMatrix(k, 0);
+	//	ss >> t;
+	//	e += t;
+	//	e+= "+x";
+	//	ss.clear();
+	//	ss.str("");
+	//	ss << G.getnuminMatrix(k, 0);
+	//	ss >> t;
+	//	e += t;
+	//	neweq.insert(std::pair<std::string, std::string>(iti->first,e));
+	//	itr = rrestrict.find(iti->first);
+	//	double low = this->CalculationLowerbound(iti->first,itr->second.upperbound,G.getnuminMatrix(k,0)); //找出golden探索限制
+	//	double up= this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k,0));
+	//	if (k == 0)
+	//	{
+	//		r.lowerbound = low;
+	//		r.upperbound = up;
+	//	}
+	//	else {
+	//		if (r.lowerbound > low) r.lowerbound = low;
+	//		if (r.upperbound < up)r.upperbound = up;
+	//	}
+	//	k++ ;
+	//}
+
+	//Optimization newequ1(this->NewEquation(neweq));
+	//restrictVariable iif= newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
+	//if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
+	//if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
+	//newequ1.insertEveryVariableRestrict("x", iif);
+	//double golden=newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
+	//Next = Next + D * golden;
+	//k = 0;
+	//for (iti = initial.begin(); iti != initial.end(); iti++)
+	//{
+	//	iti->second = Next.getnuminMatrix(k,0);
+	//}
+	////輸出
+	//std::cout << "第" << k << "次探索:\n";
+	//std::cout << "Golden==>" << golden << "\n";
+	//std::cout << "H==>\n" <<F<< "\n";
+	//std::cout <<"點為\n"<<Next << "\n";
+	////
+	//Matrix stepplus = D*golden; //尋找下個F ALPHAk
+	//itv = variable.begin();
+	//Matrix tg = G;
+	//for (int i = 0; i < this->getNDimension(); i++)
+	//{
+	//	std::string diffv = "";
+	//	diffv += *itv;
+	//	Optimization diff(this->differentiation(diffv));
+	//	tg.replaceNuminMatrix(i,0, diff.eval(initial));
+	//	itv++;
+	//}//x^(k+1)
+
+	//Matrix m = stepplus.Transpose() * tg;
+	//Matrix m1 = F * tg;
+	//Matrix m2 = tg.Transpose() * F * tg;
+	//F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0)-(m1*m1.Transpose())/m2.getnuminMatrix(0,0);
+
+
+
+
+
+
+
+	//const double err = 1e-6;
+	//const int strict = 60;
+	//int count = 1;
+
+	//Matrix coutf;
+	//while (count < 60)
+	//{
+	//	itv = variable.begin();
+	//	iti = initial.begin();
+	//	bool isb = true;
+	//	for (int i = 0; i < this->getNDimension(); i++)
+	//	{
+	//		
+	//		std::string diffv = "";
+	//		diffv += *itv;
+	//		Optimization diff(this->differentiation(diffv));
+	//		if(diff.eval(initial)>err) 
+	//		{
+	//			isb = false;
+	//		}
+	//		G.replaceNuminMatrix(i, 0, diff.eval(initial));
+	//		itv++;
+	//		iti++;
+
+	//	}
+	//	if (true)
+	//		break;
+	//	else {
+
+	//		for (iti = initial.begin(); iti != initial.end(); iti++)
+	//		{
+	//			t.clear();
+	//			std::stringstream ss;
+	//			std::string e = "";
+	//			ss << Ans.getnuminMatrix(k, 1);
+	//			ss >> t;
+	//			e += t;
+	//			e += "+x";
+	//			ss.clear();
+	//			ss.str("");
+	//			ss << G.getnuminMatrix(k, 1);
+	//			ss >> t;
+	//			e += t;
+	//			neweq.insert(std::pair<std::string, std::string>(iti->first, e));
+	//			itr = rrestrict.find(iti->first);
+	//			double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 1)); //找出golden探索限制
+	//			double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 1));
+	//			if (k == 0)
+	//			{
+	//				r.lowerbound = low;
+	//				r.upperbound = up;
+	//			}
+	//			else {
+	//				if (r.lowerbound > low) r.lowerbound = low;
+	//				if (r.upperbound < up)r.upperbound = up;
+	//			}
+	//			k++;
+	//		}
+
+	//		Optimization newequ1(this->NewEquation(neweq));
+	//		iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
+	//		if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
+	//		if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
+	//		newequ1.insertEveryVariableRestrict("x", iif);
+	//		golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
+	//		Next = Next + D * golden;
+	//		k = 0;
+	//		for (iti = initial.begin(); iti != initial.end(); iti++)
+	//		{
+	//			iti->second = Next.getnuminMatrix(k, 1);
+	//		}
+
+	//		coutf = F;
+
+	//		//輸出
+	//		std::cout << "第" << k << "次探索:\n";
+	//		std::cout << "Golden==>" << golden << "\n";
+	//		std::cout << "H==>\n" << F << "\n";
+	//		std::cout << "點為\n" << Next << "\n";
+	//		//
+	//		stepplus = D * golden; //尋找下個F ALPHAk
+	//		itv = variable.begin();
+	//		tg = G;
+	//		for (int i = 0; i < this->getNDimension(); i++)
+	//		{
+	//			std::string diffv = "";
+	//			diffv += *itv;
+	//			Optimization diff(this->differentiation(diffv));
+	//			tg.replaceNuminMatrix(i, 1, diff.eval(initial));
+	//			itv++;
+	//		}//x^(k+1)
+
+	//		m = stepplus.Transpose() * tg;
+	//		m1 = F * tg;
+	//		m2 = tg.Transpose() * F * tg;
+	//		F = F + (stepplus * stepplus.Transpose()) / m.getnuminMatrix(0, 0) - (m1 * m1.Transpose()) / m2.getnuminMatrix(0, 0);
+	//	}
+	//	count++;
+	//}
+	//std::cout << "Ans為\n";
+	//std::cout << "H==>\n" << coutf << "\n";
+	//std::cout << "點為\n" << Next << "\n";
 
 }
 
