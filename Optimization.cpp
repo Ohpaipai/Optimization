@@ -1623,49 +1623,51 @@ void Optimization::Quasi_Newton()
 	std::map<std::string, double>::iterator iti;
 	std::set<char>::iterator itv;
 	iti = initial.begin();
-	for (int i = 0; i < this->getNDimension(); i++)
-	{
-		std::cout << iti->first << " " << iti->second << std::endl;
-	}
-	Matrix F("F", this->getNDimension(), this->getNDimension());
-	Matrix G("d", this->getNDimension(), 1);
+	Matrix F("F", this->getNDimension(), this->getNDimension()); //近似Hessian
+	Matrix G("d", this->getNDimension(), 1);//INITIAL
 	Matrix Ans("Ans", this->getNDimension(), 1);
 	iti = initial.begin();
 	for (int i = 0; i < this->getNDimension(); i++)
 	{
-		F.replaceNuminMatrix(i, i, 1);//作單位矩陣
-		G.replaceNuminMatrix(i, 0, iti->second);
+		F.replaceNuminMatrix(i, i, 1);//Hessian第一次作單位矩陣
+		G.replaceNuminMatrix(i, 0, iti->second);//放INITIAL
 		iti++;
 	}
 	Ans = G;
 	int count = 0;
 	double golden = 0;
+
+
+
 	while (1)
 	{
-		Matrix difffirst("diff", this->getNDimension(), 1);
+		Matrix difffirst("diff", this->getNDimension(), 1);//g^(k)
 		iti = initial.begin();
 		bool isbreak = true;
-		for (int i = 0; i < this->getNDimension(); i++)
+		for (int i = 0; i < this->getNDimension(); i++) //微分
 		{
 			Optimization tem(this->differentiation(iti->first));
-			double temnum = tem.eval(initial);
-			difffirst.replaceNuminMatrix(i, 0, temnum);
-			if (temnum > 1e-6) {
+			double temnum = tem.eval(initial); //算出gradient
+			std::cout << iti->first << "微分" << this->differentiation(iti->first) << std::endl;
+			difffirst.replaceNuminMatrix(i, 0, temnum); //判斷g^(k)==0
+			if (std::abs(temnum) > 1e-6) {
 				isbreak = false;
 			}
+			iti++;
 		}
-		if (isbreak || count >= 60) {
+		if (isbreak || count >= 60) {//g^(k)==0 或是做了60次奕代
 			std::cout << "Ans:\n";
-			std::cout << "H==>\n" << F << "\n";
-			std::cout << "點為\n" << G << "\n";
+			std::cout << "H==>\n" << F;
+			std::cout << "點為\n" << G;
 			break;
 		}
 		else {
 			std::cout << "第" << count << "次探索:\n";
 			std::cout << "Golden==>" << golden << "\n";
-			std::cout << "H==>\n" << F << "\n";
-			std::cout << "點為\n" << G << "\n";
-			Matrix d = F * difffirst;
+			std::cout << "H==>\n" << F;
+			std::cout << "點為\n" << G;
+			Matrix d = F * difffirst; //做出d^(k)
+			std::cout << difffirst;
 			d = d * (-1);// d(k) = －Fk g(k)
 
 			std::string t;
@@ -1677,59 +1679,62 @@ void Optimization::Quasi_Newton()
 				t.clear();
 				std::stringstream ss;
 				std::string e = "";
-				ss << Ans.getnuminMatrix(k, 0);
-				ss >> t;
-				e += t;
-				e += "+x";
-				ss.clear();
-				ss.str("");
 				ss << G.getnuminMatrix(k, 0);
 				ss >> t;
 				e += t;
+				e += "+x*";
+				ss.clear();
+				ss.str("");
+				ss << d.getnuminMatrix(k, 0);
+				ss >> t;
+				e += t;
+				std::cout << e << std::endl; //做出x^(k)+a*d^(k)
 				neweq.insert(std::pair<std::string, std::string>(iti->first, e));
-				itr = rrestrict.find(iti->first);
-				double low = this->CalculationLowerbound(iti->first, itr->second.upperbound, G.getnuminMatrix(k, 0)); //找出golden探索限制
-				double up = this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k, 0));
-				if (k == 0)
-				{
-					r.lowerbound = low;
-					r.upperbound = up;
-				}
-				else {
-					if (r.lowerbound > low) r.lowerbound = low;
-					if (r.upperbound < up)r.upperbound = up;
-				}
+				//itr = rrestrict.find(iti->first);
+				//double low = this->CalculationLowerbound(iti->first,itr->second.upperbound,G.getnuminMatrix(k,0)); //找出golden探索限制
+				//double up= this->CalculationLowerbound(iti->first, itr->second.lowerbound, G.getnuminMatrix(k,0));
+				//if (k == 0)
+				//{
+				//	r.lowerbound = low;
+				//	r.upperbound = up;
+				//}
+				//else {
+				//	if (r.lowerbound > low) r.lowerbound = low;
+				//	if (r.upperbound < up)r.upperbound = up;
+				//}
 				k++;
 			}
 			Optimization newequ1(this->NewEquation(neweq));
 			restrictVariable iif = newequ1.checkvanszerofive("x"); //看是否有跟號內且有變數
-			if (iif.upperbound == 1.79769e+308) iif.upperbound = r.upperbound;
-			if (iif.lowerbound == 2.22507e-308) iif.lowerbound = r.lowerbound;
+			if (iif.upperbound == 1.79769e+308) iif.upperbound = 100;
+			if (iif.lowerbound == 2.22507e-308) iif.lowerbound = 0;
 			newequ1.insertEveryVariableRestrict("x", iif);
-			golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);
-			Matrix g = G;
+			std::cout << "限制" << iif.lowerbound << "   " << iif.upperbound << std::endl;
+			golden = newequ1.GoldenSearch(iif.lowerbound, (iif.upperbound - iif.lowerbound) * phi, iif.upperbound, 1e-5, 0);//golden 找alpha
+			Matrix g = G; //g^(K)放進來
 			Matrix alphadiffg("al", this->getNDimension(), 1);
 			iti = initial.begin();
-			for (int i = 0; i < this->getNDimension(); i++)
+			for (int i = 0; i < this->getNDimension(); i++)//將initial點更新 G也更新
 			{
-				iti->second += difffirst.getnuminMatrix(i, 0) * golden;
+				iti->second += d.getnuminMatrix(i, 0) * golden;
 				G.replaceNuminMatrix(i, 0, iti->second);
 				iti++;
-			} //作何啟argmin
+			}
 			iti = initial.begin();
-			for (int i = 0; i < this->getNDimension(); i++)
+			for (int i = 0; i < this->getNDimension(); i++) //求出delta g^(k)=g^(k+1)-g^(k) 
 			{
 				Optimization tem(this->differentiation(iti->first));
 				double temnum = tem.eval(initial);
 				alphadiffg.replaceNuminMatrix(i, 0, (temnum - difffirst.getnuminMatrix(i, 0)));
 				iti++;
 			}
-			Matrix alphax = d * (golden);
+			Matrix alphax = d * (golden); //delta x^(k)=alpha*d^(k)
+			//下面步驟為dsp演算法
 			Matrix onemother = alphax.Transpose() * alphadiffg;
 			Matrix twomother = alphadiffg.Transpose() * F * alphadiffg;
 			Matrix twochild = F * alphadiffg;
 			F = F + (alphax * alphax.Transpose()) / onemother.getnuminMatrix(0, 0) - ((F * alphadiffg) * twochild.Transpose()) / twomother.getnuminMatrix(0, 0);
-
+			//F更新完畢 做下一次軼代
 		}
 		count++;
 	}
